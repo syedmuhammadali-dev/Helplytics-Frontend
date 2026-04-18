@@ -1,6 +1,8 @@
 ﻿import axios from "axios";
 import { getCookie } from "cookies-next";
 
+import { beginPendingRequest, finishPendingRequest } from "./network-pending";
+
 const isDevelopment = process.env.NODE_ENV === "development";
 
 export const BASE_URL = isDevelopment
@@ -15,12 +17,26 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  beginPendingRequest();
+
   const token = getCookie("auth_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => {
+    finishPendingRequest();
+    return response;
+  },
+  (error) => {
+    finishPendingRequest();
+    return Promise.reject(error);
+  },
+);
 
 export default api;
 

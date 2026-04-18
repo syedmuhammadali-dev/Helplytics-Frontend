@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Send, ChevronDown, Wand2 } from "lucide-react";
+import { Send, ChevronDown, Loader2, Wand2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
@@ -111,15 +111,15 @@ export default function CreateRequestPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12">
+      <main className="grow container mx-auto px-6 py-12">
         <div className="flex flex-col gap-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="premium-card-dark p-8 md:p-12 relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute top-[-80px] right-[-80px] w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-            <span className="section-label !text-primary !mb-6">Create Request</span>
+            <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+            <span className="section-label text-primary! mb-6!">Create Request</span>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl tracking-tight leading-[1.1]">
               Turn a rough problem into a <span className="text-teal-400">clear</span> help request.
             </h1>
@@ -197,7 +197,7 @@ export default function CreateRequestPage() {
                     <label className="section-label text-dark/60">Urgency</label>
                     <div className="relative">
                       <select
-                        className="form-select form-input-muted !pr-12"
+                        className="form-select form-input-muted pr-12!"
                         value={values.urgency}
                         onChange={(event) =>
                           updateField(
@@ -221,7 +221,7 @@ export default function CreateRequestPage() {
                   <div className="flex flex-wrap items-center gap-5 mt-6 pt-6 border-t border-black/5">
                     <button
                       type="button"
-                      className="btn-secondary !py-4 !px-8 text-sm flex items-center gap-2 group"
+                      className="btn-secondary py-4! px-8! text-sm flex items-center gap-2 group"
                       onClick={applySuggestions}
                     >
                       <Wand2
@@ -232,10 +232,14 @@ export default function CreateRequestPage() {
                     </button>
                     <button
                       type="submit"
-                      className="btn-primary !py-4 !px-10 text-sm shadow-xl"
+                      className="btn-primary py-4! px-10! text-sm shadow-xl"
                       disabled={isSubmitting}
                     >
-                      <Send size={16} />
+                      {isSubmitting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Send size={16} />
+                      )}
                       {isSubmitting ? "Publishing..." : "Publish request"}
                     </button>
                   </div>

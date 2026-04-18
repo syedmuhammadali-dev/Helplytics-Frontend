@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Send, ChevronDown } from "lucide-react";
+import { Send, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
@@ -20,6 +20,7 @@ export default function MessagesPage() {
   const currentUser = getCurrentCommunityUser(state, session);
   const [selectedRecipient, setSelectedRecipient] = useState("");
   const [messageText, setMessageText] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   const recipient =
     selectedRecipient ||
@@ -30,10 +31,11 @@ export default function MessagesPage() {
     event.preventDefault();
 
     if (!recipient || !messageText.trim()) {
-      toast.error("Select a recipient and write a message first.");
+      toast.error("Select a recipient and enter a message first.");
       return;
     }
 
+    setIsSending(true);
     try {
       await sendMessage({
         recipientId: recipient,
@@ -44,6 +46,8 @@ export default function MessagesPage() {
       toast.success("Message sent.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to send message."));
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -51,15 +55,15 @@ export default function MessagesPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12">
+      <main className="grow container mx-auto px-6 py-12">
         <div className="flex flex-col gap-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="premium-card-dark p-8 md:p-12 relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute top-[-80px] right-[-80px] w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-            <span className="section-label !text-primary !mb-6">
+            <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+            <span className="section-label text-primary! mb-6!">
               Interaction / Messaging
             </span>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl tracking-tight leading-[1.1]">
@@ -85,11 +89,11 @@ export default function MessagesPage() {
                   {state.messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className="p-6 md:p-8 rounded-[1.5rem] bg-white/60 border border-black/5 hover:bg-white hover:shadow-xl transition-all cursor-pointer group hover:border-primary/20"
+                      className="p-6 md:p-8 rounded-3xl bg-white/60 border border-black/5 hover:bg-white hover:shadow-xl transition-all cursor-pointer group hover:border-primary/20"
                     >
                       <div className="flex items-center justify-between mb-5">
                         <div className="flex items-center gap-3">
-                          <div className="avatar !w-10 !h-10 text-xs">
+                          <div className="avatar w-10! h-10! text-xs">
                             {msg.from[0]}
                           </div>
                           <div className="flex flex-col">
@@ -163,9 +167,14 @@ export default function MessagesPage() {
                   <button
                     type="submit"
                     className="btn-primary w-full justify-center py-5 text-base mt-4 shadow-lg shadow-primary/20"
+                    disabled={isSending}
                   >
-                    <Send size={18} />
-                    Send message
+                    {isSending ? (
+                      <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                      <Send size={18} />
+                    )}
+                    {isSending ? "Sending..." : "Send message"}
                   </button>
                 </form>
               </div>

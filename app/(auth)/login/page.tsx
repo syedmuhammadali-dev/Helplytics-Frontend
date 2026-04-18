@@ -4,7 +4,7 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
@@ -101,7 +101,7 @@ export default function LoginPage() {
       router.push("/dashboard");
       router.refresh();
     } catch (error: unknown) {
-      toast.error(getErrorMessage(error, "Invalid email or password."));
+      toast.error(getErrorMessage(error, "User not found."));
     } finally {
       submitLockRef.current = false;
       setIsLoading(false);
@@ -193,6 +193,7 @@ export default function LoginPage() {
                 className="btn btn-primary"
                 disabled={isLoading}
               >
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : null}
                 {isLoading ? "Authenticating..." : "Continue to dashboard"}
               </button>
             </form>

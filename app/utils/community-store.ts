@@ -127,7 +127,25 @@ async function fetchCommunityState() {
 export function getApiErrorMessage(error: unknown, fallback: string) {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as { message?: string } | undefined;
-    return data?.message || fallback;
+    const message = data?.message?.trim();
+
+    if (message) {
+      if (/recipient not found/i.test(message)) {
+        return "Recipient not found.";
+      }
+
+      if (/user not found/i.test(message)) {
+        return "User not found.";
+      }
+
+      return message;
+    }
+
+    if (error.response?.status === 404) {
+      return "User not found.";
+    }
+
+    return fallback;
   }
 
   return fallback;

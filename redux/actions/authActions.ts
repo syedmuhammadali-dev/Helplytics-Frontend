@@ -3,6 +3,10 @@ import axios from "axios";
 import { getCookie } from "cookies-next";
 
 import type { CommunityRole } from "../../app/utils/auth-session";
+import {
+  beginPendingRequest,
+  finishPendingRequest,
+} from "../../app/utils/network-pending";
 
 export type AuthApiError = {
   message: string;
@@ -55,12 +59,26 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  beginPendingRequest();
+
   const token = getCookie("auth_token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
   return config;
 });
+
+api.interceptors.response.use(
+  (response) => {
+    finishPendingRequest();
+    return response;
+  },
+  (error) => {
+    finishPendingRequest();
+    return Promise.reject(error);
+  },
+);
 
 const getRejectPayload = (error: unknown): AuthApiError => {
   if (axios.isAxiosError(error)) {

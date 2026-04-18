@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../../components/header/header";
@@ -19,6 +21,8 @@ export default function RequestDetailPage() {
   const session = readAuthSession();
   const state = useCommunityStore();
   getCurrentCommunityUser(state, session);
+  const [isHelping, setIsHelping] = useState(false);
+  const [isSolving, setIsSolving] = useState(false);
   const request =
     state.requests.find((item) => item.id === params.id) ?? state.requests[0];
   const requester =
@@ -34,12 +38,19 @@ export default function RequestDetailPage() {
       return;
     }
 
+    if (isHelping) {
+      return;
+    }
+
+    setIsHelping(true);
     try {
       await addHelperToRequest(request.id);
       await state.refresh();
       toast.success("You have been added to the helper pool.");
     } catch (error: unknown) {
       toast.info(getApiErrorMessage(error, "Unable to join helper pool."));
+    } finally {
+      setIsHelping(false);
     }
   };
 
@@ -48,17 +59,19 @@ export default function RequestDetailPage() {
       return;
     }
 
-    if (request.status === "Solved") {
-      toast.info("This request is already marked as solved.");
+    if (request.status === "Solved" || isSolving) {
       return;
     }
 
+    setIsSolving(true);
     try {
       await markRequestSolved(request.id);
       await state.refresh();
       toast.success("Request marked as solved.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to update request."));
+    } finally {
+      setIsSolving(false);
     }
   };
 
@@ -130,15 +143,23 @@ export default function RequestDetailPage() {
               <p className="section-kicker">Community actions</p>
               <h3>Support or close the request</h3>
               <div className="row">
-                <button type="button" className="btn btn-primary" onClick={handleHelp}>
-                  I can help
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleHelp}
+                  disabled={isHelping}
+                >
+                  {isHelping ? <Loader2 size={16} className="animate-spin" /> : null}
+                  {isHelping ? "Joining..." : "I can help"}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={handleSolved}
+                  disabled={request.status === "Solved" || isSolving}
                 >
-                  Mark as solved
+                  {isSolving ? <Loader2 size={16} className="animate-spin" /> : null}
+                  {request.status === "Solved" ? "Already solved" : isSolving ? "Saving..." : "Mark as solved"}
                 </button>
               </div>
             </div>

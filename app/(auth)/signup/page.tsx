@@ -4,7 +4,7 @@ import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { ChevronDown, Eye, EyeOff, X, SendHorizontal } from "lucide-react";
+import { ChevronDown, Eye, EyeOff, Loader2, X, SendHorizontal } from "lucide-react";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -47,6 +47,7 @@ export default function SignupPage() {
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const updateField = <T extends keyof SignupValues>(
     field: T,
@@ -125,10 +126,11 @@ export default function SignupPage() {
   };
 
   const handleResendOtp = async () => {
-    if (isVerifying || otpResendLockRef.current) {
+    if (isVerifying || isResending || otpResendLockRef.current) {
       return;
     }
 
+    setIsResending(true);
     otpResendLockRef.current = true;
     try {
       const response = await api.post("/api/auth/resend-otp", {
@@ -139,6 +141,7 @@ export default function SignupPage() {
       toast.error(getErrorMessage(error, "Failed to resend OTP."));
     } finally {
       otpResendLockRef.current = false;
+      setIsResending(false);
     }
   };
 
@@ -313,6 +316,7 @@ export default function SignupPage() {
                 className="btn btn-primary"
                 disabled={isLoading}
               >
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : null}
                 {isLoading ? "Creating account..." : "Create account"}
               </button>
             </form>
@@ -329,7 +333,7 @@ export default function SignupPage() {
 
       <AnimatePresence>
         {showOtpModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-dark/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-dark/60 backdrop-blur-sm">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -369,7 +373,7 @@ export default function SignupPage() {
                         setOtp(event.target.value.replace(/\D/g, ""))
                       }
                       placeholder="000000"
-                      className="form-input text-center text-3xl font-bold tracking-[0.5em] py-5 !rounded-2xl border-2 focus:border-primary transition-all"
+                      className="form-input text-center text-3xl font-bold tracking-[0.5em] py-5 rounded-2xl! border-2 focus:border-primary transition-all"
                       autoFocus
                     />
                   </div>
@@ -379,6 +383,7 @@ export default function SignupPage() {
                     disabled={otp.length !== 6 || isVerifying}
                     className="btn btn-primary w-full py-5 text-base shadow-lg shadow-primary/20"
                   >
+                    {isVerifying ? <Loader2 size={18} className="animate-spin" /> : null}
                     {isVerifying ? "Verifying..." : "Verify & Continue"}
                   </button>
                 </form>
@@ -389,9 +394,17 @@ export default function SignupPage() {
                     <button
                       type="button"
                       onClick={handleResendOtp}
+                      disabled={isResending || isVerifying}
                       className="text-primary font-bold hover:underline"
                     >
-                      Resend OTP
+                      {isResending ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 size={14} className="animate-spin" />
+                          Resending...
+                        </span>
+                      ) : (
+                        "Resend OTP"
+                      )}
                     </button>
                   </p>
                 </div>

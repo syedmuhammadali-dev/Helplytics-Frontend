@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ChevronRight, User, MapPin, Sparkles, CheckCircle2 } from "lucide-react";
+import { ChevronRight, User, MapPin, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
@@ -39,6 +39,7 @@ export default function OnboardingPage() {
   const [selectedSkills, setSelectedSkills] = useState<string[]>(
     currentUser.skills.length ? currentUser.skills : ["React", "Figma"],
   );
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const nextStep = () => {
     if (step === 1 && (!name.trim() || !location.trim())) {
@@ -63,6 +64,11 @@ export default function OnboardingPage() {
   };
 
   const finish = async () => {
+    if (isFinishing) {
+      return;
+    }
+
+    setIsFinishing(true);
     try {
       await updateCurrentUserProfile({
         name: name.trim(),
@@ -77,6 +83,8 @@ export default function OnboardingPage() {
       router.push("/dashboard");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to save onboarding."));
+    } finally {
+      setIsFinishing(false);
     }
   };
 
@@ -84,7 +92,7 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12 flex items-center justify-center">
+      <main className="grow container mx-auto px-6 py-12 flex items-center justify-center">
         <div className="w-full max-w-4xl flex flex-col gap-12">
           <div className="flex items-center justify-center gap-4">
             {[1, 2, 3].map((s) => (
@@ -269,8 +277,10 @@ export default function OnboardingPage() {
                   type="button"
                   onClick={finish}
                   className="btn-primary py-5 px-16 text-lg shadow-xl shadow-primary/20"
+                  disabled={isFinishing}
                 >
-                  Go to Dashboard
+                  {isFinishing ? <Loader2 size={18} className="animate-spin" /> : null}
+                  {isFinishing ? "Saving..." : "Go to Dashboard"}
                 </button>
               </div>
             ) : null}

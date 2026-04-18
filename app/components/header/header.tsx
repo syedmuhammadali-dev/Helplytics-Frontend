@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const publicLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Explore", href: "/explore" },
+  { label: "Leaderboard", href: "/leaderboard" },
   { label: "Create Request", href: "/create-request" },
   { label: "Messages", href: "/messages" },
   { label: "Profile", href: "/profile" },
@@ -22,6 +23,7 @@ const publicLinks = [
 const protectedLinks = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Explore", href: "/explore" },
+  { label: "Leaderboard", href: "/leaderboard" },
   { label: "Create Request", href: "/create-request" },
   { label: "Messages", href: "/messages" },
   { label: "Profile", href: "/profile" },

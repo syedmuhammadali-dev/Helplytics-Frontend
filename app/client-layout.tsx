@@ -6,6 +6,7 @@ import React, { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { ToastContainer } from "react-toastify";
+import NetworkLoader from "./components/network-loader";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -20,6 +21,7 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
 
   return (
     <main className="min-h-screen flex flex-col">
+      <NetworkLoader />
       <motion.div
         key={pathname}
         initial={{ opacity: 0 }}

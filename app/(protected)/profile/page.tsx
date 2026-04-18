@@ -26,6 +26,7 @@ function ProfileEditor({
   const [location, setLocation] = useState(userData.location);
   const [skills, setSkills] = useState(userData.skills.join(", "));
   const [interests, setInterests] = useState(userData.interests.join(", "));
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -35,6 +36,7 @@ function ProfileEditor({
       return;
     }
 
+    setIsSaving(true);
     try {
       await updateCurrentUserProfile({
         name: name.trim(),
@@ -53,6 +55,8 @@ function ProfileEditor({
       toast.success("Profile updated successfully.");
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to update profile."));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -85,7 +89,7 @@ function ProfileEditor({
                 {(userData.skills.length ? userData.skills : ["General Support"]).map((skill) => (
                   <span
                     key={skill}
-                    className="tag tag-blue !px-4 !py-2 !text-xs !rounded-xl shadow-sm"
+                    className="tag tag-blue px-4! py-2! text-xs! rounded-xl! shadow-sm"
                   >
                     {skill}
                   </span>
@@ -99,7 +103,7 @@ function ProfileEditor({
                 {(userData.badges.length ? userData.badges : ["New Member"]).map((badge) => (
                   <span
                     key={badge}
-                    className="tag tag-green !px-4 !py-2 !text-xs !rounded-xl shadow-sm"
+                    className="tag tag-green px-4! py-2! text-xs! rounded-xl! shadow-sm"
                   >
                     {badge}
                   </span>
@@ -161,10 +165,11 @@ function ProfileEditor({
 
             <button
               type="submit"
-              className="btn-primary !py-4 !px-8 text-sm mt-6 shadow-xl"
+              className="btn-primary py-4! px-8! text-sm mt-6 shadow-xl"
+              disabled={isSaving}
             >
-              <Save size={18} />
-              Save profile settings
+              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+              {isSaving ? "Saving..." : "Save profile settings"}
             </button>
           </form>
         </div>
@@ -182,7 +187,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="grow flex items-center justify-center">
           <Loader2 className="animate-spin text-primary" size={48} />
         </main>
       </div>
@@ -193,15 +198,15 @@ export default function ProfilePage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12">
+      <main className="grow container mx-auto px-6 py-12">
         <div className="flex flex-col gap-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="premium-card-dark p-8 md:p-12 relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute top-[-80px] right-[-80px] w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
-            <span className="section-label !text-primary !mb-6">Member Profile</span>
+            <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+            <span className="section-label text-primary! mb-6!">Member Profile</span>
             <h1 className="text-4xl md:text-6xl font-bold mb-4 tracking-tight leading-tight">
               {userData.name}
             </h1>
