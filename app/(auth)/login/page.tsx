@@ -3,7 +3,7 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -16,6 +16,12 @@ import {
 } from "../../utils/auth-session";
 import api from "../../utils/api";
 
+type JwtPayload = {
+  name?: string;
+  email?: string;
+  role?: string;
+};
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError(error)) {
     const data = error.response?.data as { message?: string } | undefined;
@@ -25,8 +31,23 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const parseTokenPayload = (token: string): JwtPayload | null => {
+  try {
+    const payloadBase64 = token.split(".")[1];
+    if (!payloadBase64) {
+      return null;
+    }
+
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(payloadJson) as JwtPayload;
+  } catch {
+    return null;
+  }
+};
+
 export default function LoginPage() {
   const router = useRouter();
+  const submitLockRef = useRef(false);
   const [values, setValues] = useState<LoginValues>({
     email: "",
     password: "",
@@ -46,6 +67,10 @@ export default function LoginPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (isLoading || submitLockRef.current) {
+      return;
+    }
+
     const nextErrors = validateLoginForm(values);
     setErrors(nextErrors);
 
@@ -55,6 +80,7 @@ export default function LoginPage() {
     }
 
     setIsLoading(true);
+    submitLockRef.current = true;
 
     try {
       const response = await api.post("/api/auth/login", {
@@ -63,16 +89,12 @@ export default function LoginPage() {
       });
 
       const { token, message } = response.data;
-      const profileResponse = await api.get("/api/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const user = profileResponse.data.user;
+      const tokenPayload = parseTokenPayload(token);
 
       startAuthSession(token, {
-        name: user.name,
-        email: user.email,
-        role: user.role,
+        name: tokenPayload?.name || values.email.trim().split("@")[0] || "User",
+        email: tokenPayload?.email || values.email.trim(),
+        role: tokenPayload?.role,
       });
 
       toast.success(message || "Welcome back! Redirecting to your dashboard.");
@@ -81,6 +103,7 @@ export default function LoginPage() {
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Invalid email or password."));
     } finally {
+      submitLockRef.current = false;
       setIsLoading(false);
     }
   };

@@ -2,7 +2,7 @@
 import { getCookie } from "cookies-next";
 
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3080";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 const api = axios.create({
   baseURL: BASE_URL,

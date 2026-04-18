@@ -3,7 +3,7 @@
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ChevronDown, Eye, EyeOff, X, SendHorizontal } from "lucide-react";
 import { toast } from "react-toastify";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,6 +36,9 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 export default function SignupPage() {
   const router = useRouter();
+  const signupLockRef = useRef(false);
+  const otpVerifyLockRef = useRef(false);
+  const otpResendLockRef = useRef(false);
   const [values, setValues] = useState<SignupValues>(initialValues);
   const [errors, setErrors] = useState<ValidationErrors<keyof SignupValues>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -56,6 +59,10 @@ export default function SignupPage() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (isLoading || signupLockRef.current) {
+      return;
+    }
+
     const nextErrors = validateSignupForm(values);
     setErrors(nextErrors);
 
@@ -65,13 +72,14 @@ export default function SignupPage() {
     }
 
     setIsLoading(true);
+    signupLockRef.current = true;
 
     try {
       const response = await api.post("/api/auth/signup", {
         name: values.name.trim(),
         email: values.email.trim(),
-        password: values.password,
-        confirmPassword: values.confirmPassword,
+        password: values.password.trim(),
+        confirmPassword: values.confirmPassword.trim(),
         role: values.role,
       });
 
@@ -80,18 +88,25 @@ export default function SignupPage() {
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Signup failed. Please try again."));
     } finally {
+      signupLockRef.current = false;
       setIsLoading(false);
     }
   };
 
   const handleVerifyOtp = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (isVerifying || otpVerifyLockRef.current) {
+      return;
+    }
+
     if (otp.length !== 6) {
       toast.error("Please enter a valid 6-digit OTP.");
       return;
     }
 
     setIsVerifying(true);
+    otpVerifyLockRef.current = true;
     try {
       const response = await api.post("/api/auth/verify-otp", {
         email: values.email.trim(),
@@ -104,11 +119,17 @@ export default function SignupPage() {
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Verification failed."));
     } finally {
+      otpVerifyLockRef.current = false;
       setIsVerifying(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (isVerifying || otpResendLockRef.current) {
+      return;
+    }
+
+    otpResendLockRef.current = true;
     try {
       const response = await api.post("/api/auth/resend-otp", {
         email: values.email.trim(),
@@ -116,6 +137,8 @@ export default function SignupPage() {
       toast.success(response.data.message || "OTP resent successfully.");
     } catch (error: unknown) {
       toast.error(getErrorMessage(error, "Failed to resend OTP."));
+    } finally {
+      otpResendLockRef.current = false;
     }
   };
 
@@ -314,6 +337,7 @@ export default function SignupPage() {
               className="premium-card bg-white w-full max-w-md p-8 relative shadow-2xl"
             >
               <button
+                type="button"
                 onClick={() => setShowOtpModal(false)}
                 className="absolute right-6 top-6 text-text-muted hover:text-dark transition-colors"
               >
@@ -363,6 +387,7 @@ export default function SignupPage() {
                   <p className="text-sm text-text-muted">
                     Didn&apos;t receive the code?{" "}
                     <button
+                      type="button"
                       onClick={handleResendOtp}
                       className="text-primary font-bold hover:underline"
                     >
