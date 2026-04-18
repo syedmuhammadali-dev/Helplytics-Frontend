@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { setCookie, deleteCookie } from "cookies-next";
 import { protectedRoutes } from "../../utils/routes";
 
 const getLinks = (pathname: string, isProtected: boolean) => {
@@ -20,6 +21,7 @@ const getLinks = (pathname: string, isProtected: boolean) => {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Explore", href: "/explore" },
       { name: "Leaderboard", href: "/leaderboard" },
+      { name: "AI Center", href: "/ai-center" },
     ];
   }
 
@@ -28,6 +30,7 @@ const getLinks = (pathname: string, isProtected: boolean) => {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Explore", href: "/explore" },
       { name: "Notifications", href: "/notifications" },
+      { name: "AI Center", href: "/ai-center" },
     ];
   }
 
@@ -35,7 +38,8 @@ const getLinks = (pathname: string, isProtected: boolean) => {
     return [
       { name: "Dashboard", href: "/dashboard" },
       { name: "Explore", href: "/explore" },
-      { name: "Create Request", href: "/create-request" },
+      { name: "Create", href: "/create-request" },
+      { name: "AI Center", href: "/ai-center" },
     ];
   }
 
@@ -44,22 +48,15 @@ const getLinks = (pathname: string, isProtected: boolean) => {
       { name: "Dashboard", href: "/dashboard" },
       { name: "Explore", href: "/explore" },
       { name: "Leaderboard", href: "/leaderboard" },
-      { name: "Notifications", href: "/notifications" },
-    ];
-  }
-
-  if (pathname.includes("/requests/")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Messages", href: "/messages" },
+      { name: "AI Center", href: "/ai-center" },
     ];
   }
 
   if (pathname.includes("/ai-center")) {
     return [
       { name: "Dashboard", href: "/dashboard" },
-      { name: "Create Request", href: "/create-request" },
+      { name: "Explore", href: "/explore" },
+      { name: "Leaderboard", href: "/leaderboard" },
       { name: "AI Center", href: "/ai-center" },
     ];
   }
@@ -67,8 +64,8 @@ const getLinks = (pathname: string, isProtected: boolean) => {
   return [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Explore", href: "/explore" },
-    { name: "Messages", href: "/messages" },
     { name: "AI Center", href: "/ai-center" },
+    { name: "Onboarding", href: "/onboarding" },
     { name: "Profile", href: "/profile" },
   ];
 };
@@ -76,10 +73,15 @@ const getLinks = (pathname: string, isProtected: boolean) => {
 export default function Header() {
   const pathname = usePathname();
   const isProtected = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`)
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
   const links = getLinks(pathname, isProtected);
+
+  const handleSignOut = () => {
+    deleteCookie("auth_token");
+    window.location.href = "/login";
+  };
 
   return (
     <header className="glass-header sticky top-0 z-50 px-8 py-4 flex items-center justify-between">
@@ -88,7 +90,9 @@ export default function Header() {
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
             H
           </div>
-          <span className="font-bold text-xl tracking-tight text-dark">HelpHub AI</span>
+          <span className="font-bold text-xl tracking-tight text-dark">
+            HelpHub AI
+          </span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-1">
@@ -121,13 +125,16 @@ export default function Header() {
           </>
         ) : (
           <div className="flex items-center gap-6">
-             <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+            <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
               <span className="notif-dot" />
               Session active
             </div>
-            <Link href="/login" className="text-sm font-bold text-dark hover:text-primary transition-colors">
+            <button
+              onClick={handleSignOut}
+              className="text-sm font-bold text-dark hover:text-primary transition-colors cursor-pointer"
+            >
               Sign out
-            </Link>
+            </button>
           </div>
         )}
       </div>

@@ -13,15 +13,16 @@ const publicRoutes = [
 ];
 
 const protectedRoutes = [
-  "/dashboard", 
-  "/profile", 
-  "/messages", 
+  "/dashboard",
+  "/profile",
+  "/messages",
   "/ai-center",
   "/leaderboard",
   "/notifications",
   "/create-request",
   "/explore",
-  "/requests"
+  "/requests",
+  "/onboarding",
 ];
 
 export { publicRoutes, protectedRoutes };

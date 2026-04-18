@@ -10,7 +10,8 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: "HelpHub AI | Find help faster. Become help that matters.",
-  description: "HelpHub AI is a community-powered support network for students, mentors, creators, and builders.",
+  description:
+    "HelpHub AI is a community-powered support network for students, mentors, creators, and builders.",
 };
 
 export default function RootLayout({
@@ -20,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-outfit antialiased">
+      <body className="min-h-full flex flex-col font-outfit anFtialiased">
         <div className="bg-gradient-blur" />
         <ClientLayout>{children}</ClientLayout>
       </body>

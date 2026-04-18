@@ -11,6 +11,7 @@ const PROTECTED_ROUTES = [
   "/create-request",
   "/explore",
   "/requests",
+  "/onboarding",
 ];
 
 const AUTH_ROUTES = ["/login", "/signup"];
@@ -20,12 +21,10 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
-    pathname.startsWith(route)
+    pathname.startsWith(route),
   );
 
-  const isAuthRoute = AUTH_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
   if (isProtectedRoute && !token) {
     const url = new URL("/login", request.url);
@@ -51,6 +50,7 @@ export const config = {
     "/create-request/:path*",
     "/explore/:path*",
     "/requests/:path*",
+    "/onboarding/:path*",
     "/login",
     "/signup",
   ],
