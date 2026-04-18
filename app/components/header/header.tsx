@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Bell,
-  Search,
-  User,
-  ChevronDown,
-  HelpCircle,
-  Settings,
-} from "lucide-react";
+import { Bell, Search, ChevronDown, HelpCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Header() {
@@ -37,14 +30,14 @@ export default function Header() {
           <HelpCircle size={20} />
         </button>
 
-        <div className="h-8 w-[1px] bg-slate-200 mx-2" />
+        <div className="h-8 w-px bg-slate-200 mx-2" />
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-xl transition-colors group"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-indigo-500/10">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-indigo-500/10">
             AD
           </div>
           <div className="text-left hidden md:block">

@@ -14,7 +14,14 @@ import {
   Loader2,
   ArrowRight,
 } from "lucide-react";
-import { setToken } from "../utils/auth";
+import { setCookie } from "cookies-next";
+
+const AUTH_TOKEN_KEY = "auth_token";
+const COOKIE_OPTIONS = {
+  path: "/",
+  sameSite: "strict" as const,
+  maxAge: 60 * 60 * 24 * 7,
+};
 
 export default function SignupPage() {
   const [name, setName] = useState("");
@@ -39,7 +46,7 @@ export default function SignupPage() {
 
     // Mock signup logic
     setTimeout(() => {
-      setToken("mock_token_123");
+      setCookie(AUTH_TOKEN_KEY, "mock_token_123", COOKIE_OPTIONS);
       router.push("/dashboard");
     }, 1500);
   };
@@ -66,7 +73,7 @@ export default function SignupPage() {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-600 mb-4 shadow-lg"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-tr from-purple-600 to-pink-600 mb-4 shadow-lg"
             >
               <UserPlus className="w-8 h-8 text-white" />
             </motion.div>
@@ -177,7 +184,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
+              className="w-full bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-purple-500/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

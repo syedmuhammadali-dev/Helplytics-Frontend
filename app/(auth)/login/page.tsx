@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { LogIn, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import { setToken } from "../utils/auth";
+import { setCookie } from "cookies-next";
+
+const AUTH_TOKEN_KEY = "auth_token";
+const COOKIE_OPTIONS = {
+  path: "/",
+  sameSite: "strict" as const,
+  maxAge: 60 * 60 * 24 * 7,
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -23,7 +30,7 @@ export default function LoginPage() {
     // Mock login logic
     setTimeout(() => {
       if (email === "admin@example.com" && password === "admin123") {
-        setToken("mock_token_123");
+        setCookie(AUTH_TOKEN_KEY, "mock_token_123", COOKIE_OPTIONS);
         router.push("/dashboard");
       } else {
         setError("Invalid email or password. Use admin@example.com / admin123");
@@ -54,7 +61,7 @@ export default function LoginPage() {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 mb-4 shadow-lg"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-linear-to-tr from-indigo-600 to-purple-600 mb-4 shadow-lg"
             >
               <LogIn className="w-8 h-8 text-white" />
             </motion.div>
@@ -127,7 +134,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-indigo-500/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -142,7 +149,7 @@ export default function LoginPage() {
 
           <div className="mt-8 text-center">
             <p className="text-indigo-200/60 text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"

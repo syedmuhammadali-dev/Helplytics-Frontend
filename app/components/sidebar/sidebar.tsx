@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
@@ -16,8 +16,10 @@ import {
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
-import { removeToken } from "../utils/auth";
 import { useRouter } from "next/navigation";
+import { deleteCookie } from "cookies-next";
+
+const AUTH_TOKEN_KEY = "auth_token";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
@@ -35,7 +37,7 @@ export default function Sidebar() {
   const router = useRouter();
 
   const handleLogout = () => {
-    removeToken();
+    deleteCookie(AUTH_TOKEN_KEY, { path: "/" });
     router.push("/login");
   };
 
@@ -47,7 +49,7 @@ export default function Sidebar() {
     >
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/20">
+        <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
         {!isCollapsed && (
