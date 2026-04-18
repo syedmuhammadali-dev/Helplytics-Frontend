@@ -46,7 +46,9 @@ type VerifyOtpPayload = {
 };
 
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "";
+  process.env.NODE_ENV === "development"
+    ? process.env.NEXT_PUBLIC_BACKEND_URL_DEVELOPMENT || "http://localhost:3080"
+    : process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 const api = axios.create({
   baseURL: BASE_URL,

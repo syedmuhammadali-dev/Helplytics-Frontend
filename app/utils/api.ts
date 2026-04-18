@@ -1,8 +1,11 @@
 ﻿import axios from "axios";
 import { getCookie } from "cookies-next";
 
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "";
+const isDevelopment = process.env.NODE_ENV === "development";
+
+export const BASE_URL = isDevelopment
+  ? process.env.NEXT_PUBLIC_BACKEND_URL_DEVELOPMENT || "http://localhost:3080"
+  : process.env.NEXT_PUBLIC_BACKEND_URL || "";
 
 const api = axios.create({
   baseURL: BASE_URL,
