@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -6,23 +6,27 @@ import { Send, ChevronDown } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
-import { readDemoSession } from "../../utils/auth-session";
+import { readAuthSession } from "../../utils/auth-session";
 import {
+  getApiErrorMessage,
   getCurrentCommunityUser,
   sendMessage,
   useCommunityStore,
 } from "../../utils/community-store";
 
 export default function MessagesPage() {
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
   const currentUser = getCurrentCommunityUser(state, session);
-  const [recipient, setRecipient] = useState(
-    state.users.find((user) => user.id !== currentUser.id)?.name ?? "",
-  );
+  const [selectedRecipient, setSelectedRecipient] = useState("");
   const [messageText, setMessageText] = useState("");
 
-  const handleSend = (event: React.FormEvent<HTMLFormElement>) => {
+  const recipient =
+    selectedRecipient ||
+    state.users.find((user) => user.id !== currentUser.id)?.id ||
+    "";
+
+  const handleSend = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!recipient || !messageText.trim()) {
@@ -30,13 +34,17 @@ export default function MessagesPage() {
       return;
     }
 
-    sendMessage({
-      from: currentUser.name,
-      to: recipient,
-      text: messageText.trim(),
-    });
-    setMessageText("");
-    toast.success("Message sent.");
+    try {
+      await sendMessage({
+        recipientId: recipient,
+        text: messageText.trim(),
+      });
+      setMessageText("");
+      await state.refresh();
+      toast.success("Message sent.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to send message."));
+    }
   };
 
   return (
@@ -89,7 +97,7 @@ export default function MessagesPage() {
                               <span className="font-bold text-dark group-hover:text-primary transition-colors">
                                 {msg.from}
                               </span>
-                              <span className="text-text-muted text-xs">→</span>
+                              <span className="text-text-muted text-xs">?</span>
                               <span className="font-bold text-dark text-sm">{msg.to}</span>
                             </div>
                             <span className="text-[10px] font-bold text-text-muted/60 uppercase tracking-widest">
@@ -124,12 +132,12 @@ export default function MessagesPage() {
                       <select
                         className="form-select"
                         value={recipient}
-                        onChange={(event) => setRecipient(event.target.value)}
+                        onChange={(event) => setSelectedRecipient(event.target.value)}
                       >
                         {state.users
                           .filter((user) => user.id !== currentUser.id)
                           .map((user) => (
-                            <option key={user.id} value={user.name}>
+                            <option key={user.id} value={user.id}>
                               {user.name}
                             </option>
                           ))}
@@ -168,3 +176,4 @@ export default function MessagesPage() {
     </div>
   );
 }
+

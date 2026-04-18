@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,10 +7,11 @@ import { Send, ChevronDown, Wand2 } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
-import { readDemoSession } from "../../utils/auth-session";
+import { readAuthSession } from "../../utils/auth-session";
 import {
   createRequest,
   detectUrgency,
+  getApiErrorMessage,
   getCurrentCommunityUser,
   rewriteDescription,
   suggestCategory,
@@ -28,7 +29,7 @@ type FormValues = {
 
 export default function CreateRequestPage() {
   const router = useRouter();
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
   const currentUser = getCurrentCommunityUser(state, session);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,7 +74,7 @@ export default function CreateRequestPage() {
     toast.success("AI suggestions applied to your request.");
   };
 
-  const publishRequest = (event: React.FormEvent<HTMLFormElement>) => {
+  const publishRequest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (!values.title.trim() || !values.description.trim()) {
@@ -83,21 +84,27 @@ export default function CreateRequestPage() {
 
     setIsSubmitting(true);
 
-    const newRequest = createRequest({
-      title: values.title.trim(),
-      description: values.description.trim(),
-      tags: values.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      category: values.category,
-      urgency: values.urgency,
-      requesterId: currentUser.id,
-      location: currentUser.location,
-    });
+    try {
+      const newRequest = await createRequest({
+        title: values.title.trim(),
+        description: values.description.trim(),
+        tags: values.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        category: values.category,
+        urgency: values.urgency,
+        location: currentUser.location,
+      });
 
-    toast.success("Request published successfully.");
-    router.push(`/requests/${newRequest.id}`);
+      await state.refresh();
+      toast.success("Request published successfully.");
+      router.push(`/requests/${newRequest.id}`);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to publish request."));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -146,9 +153,7 @@ export default function CreateRequestPage() {
                       placeholder="Explain the challenge, your current progress, deadline, and what kind of help would be useful."
                       className="form-input form-input-muted resize-none"
                       value={values.description}
-                      onChange={(event) =>
-                        updateField("description", event.target.value)
-                      }
+                      onChange={(event) => updateField("description", event.target.value)}
                     />
                   </div>
 
@@ -171,9 +176,7 @@ export default function CreateRequestPage() {
                         <select
                           className="form-select form-input-muted"
                           value={values.category}
-                          onChange={(event) =>
-                            updateField("category", event.target.value)
-                          }
+                          onChange={(event) => updateField("category", event.target.value)}
                         >
                           <option value="Web Development">Web Development</option>
                           <option value="Design">Design</option>
@@ -289,3 +292,4 @@ export default function CreateRequestPage() {
     </div>
   );
 }
+

@@ -1,58 +1,66 @@
-"use client";
+﻿"use client";
 
-import { useSyncExternalStore } from "react";
+import axios from "axios";
+import { useEffect, useState } from "react";
 
-import {
-  communityNotifications,
-  communityRequests,
-  demoUsers,
-  type CommunityNotification,
-  type CommunityRequest,
-  type DemoRole,
-  type DemoUser,
-} from "./mock-community";
-import type { AuthSession } from "./auth-session";
+import api from "./api";
+import type { AuthSession, CommunityRole } from "./auth-session";
+
+export type CommunityUser = {
+  id: string;
+  name: string;
+  email?: string;
+  role: CommunityRole;
+  location: string;
+  interests: string[];
+  skills: string[];
+  trustScore: number;
+  badges: string[];
+  contributions: number;
+};
+
+export type CommunityRequest = {
+  id: string;
+  title: string;
+  description: string;
+  tags: string[];
+  category: string;
+  urgency: "Critical" | "High" | "Medium" | "Low";
+  location: string;
+  requesterId: string;
+  helperIds: string[];
+  status: "Open" | "Solved";
+  aiSummary: string;
+  requester?: CommunityUser | null;
+  helpers?: CommunityUser[];
+};
+
+export type CommunityNotification = {
+  id: string;
+  title: string;
+  type: string;
+  status: "Unread" | "Read";
+  time: string;
+};
 
 export type CommunityMessage = {
   id: string;
   from: string;
+  fromId: string;
   to: string;
+  toId: string;
   text: string;
   time: string;
+  requestId?: string | null;
 };
 
 export type CommunityState = {
-  users: DemoUser[];
+  currentUser: CommunityUser | null;
+  users: CommunityUser[];
   requests: CommunityRequest[];
   notifications: CommunityNotification[];
   messages: CommunityMessage[];
 };
-
-const STORAGE_KEYS = {
-  users: "helplytics_users",
-  requests: "helplytics_requests",
-  notifications: "helplytics_notifications",
-  messages: "helplytics_messages",
-};
-
-const COMMUNITY_EVENT = "helplytics-community-updated";
-
-const DEFAULT_MESSAGES: CommunityMessage[] = [
-  {
-    id: "msg-1",
-    from: "Ayesha Khan",
-    to: "Sara Noor",
-    text: "I checked your portfolio request. Share the breakpoint screenshots and I can suggest fixes.",
-    time: "09:45 AM",
-  },
-  {
-    id: "msg-2",
-    from: "Hassan Ali",
-    to: "Ayesha Khan",
-    text: "Your event poster concept is solid. I would tighten the CTA and reduce the background texture.",
-    time: "11:10 AM",
-  },
-];
 
 const CATEGORY_RULES: Record<string, string[]> = {
   "Web Development": [
@@ -103,143 +111,79 @@ const SKILLS = [
   "Tailwind",
 ];
 
-function deepCopy<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function makeId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-}
-
-function parseStoredValue<T>(rawValue: string | null, fallback: T): T {
-  if (!rawValue) {
-    return deepCopy(fallback);
-  }
-
-  try {
-    return JSON.parse(rawValue) as T;
-  } catch {
-    return deepCopy(fallback);
-  }
-}
-
-function writeLocalStorage<T>(key: string, value: T) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(key, JSON.stringify(value));
-}
-
-export function ensureCommunitySeeded() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  if (!window.localStorage.getItem(STORAGE_KEYS.users)) {
-    writeLocalStorage(STORAGE_KEYS.users, demoUsers);
-  }
-
-  if (!window.localStorage.getItem(STORAGE_KEYS.requests)) {
-    writeLocalStorage(STORAGE_KEYS.requests, communityRequests);
-  }
-
-  if (!window.localStorage.getItem(STORAGE_KEYS.notifications)) {
-    writeLocalStorage(STORAGE_KEYS.notifications, communityNotifications);
-  }
-
-  if (!window.localStorage.getItem(STORAGE_KEYS.messages)) {
-    writeLocalStorage(STORAGE_KEYS.messages, DEFAULT_MESSAGES);
-  }
-}
-
-function emitCommunityUpdate() {
-  if (typeof window === "undefined") {
-    return;
-  }
-  
-  window.dispatchEvent(new Event(COMMUNITY_EVENT));
-}
-
-function subscribe(onStoreChange: () => void) {
-  if (typeof window === "undefined") {
-    return () => undefined;
-  }
-
-  const handler = () => onStoreChange();
-  window.addEventListener(COMMUNITY_EVENT, handler);
-  window.addEventListener("storage", handler);
-
-  return () => {
-    window.removeEventListener(COMMUNITY_EVENT, handler);
-    window.removeEventListener("storage", handler);
-  };
-}
-
 const emptyState: CommunityState = {
-  users: deepCopy(demoUsers),
-  requests: deepCopy(communityRequests),
-  notifications: deepCopy(communityNotifications),
-  messages: deepCopy(DEFAULT_MESSAGES),
+  currentUser: null,
+  users: [],
+  requests: [],
+  notifications: [],
+  messages: [],
 };
 
-const DEFAULT_USERS_RAW = JSON.stringify(demoUsers);
-const DEFAULT_REQUESTS_RAW = JSON.stringify(communityRequests);
-const DEFAULT_NOTIFICATIONS_RAW = JSON.stringify(communityNotifications);
-const DEFAULT_MESSAGES_RAW = JSON.stringify(DEFAULT_MESSAGES);
-
-let cachedSnapshotSignature = "";
-let cachedSnapshot: CommunityState = emptyState;
-
-function getServerSnapshot() {
-  return emptyState;
+async function fetchCommunityState() {
+  const response = await api.get("/api/community/bootstrap");
+  return response.data.data as CommunityState;
 }
 
-export function readCommunityState(): CommunityState {
-  if (typeof window === "undefined") {
-    return emptyState;
+export function getApiErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    return data?.message || fallback;
   }
 
-  ensureCommunitySeeded();
-
-  const usersRaw =
-    window.localStorage.getItem(STORAGE_KEYS.users) ?? DEFAULT_USERS_RAW;
-  const requestsRaw =
-    window.localStorage.getItem(STORAGE_KEYS.requests) ?? DEFAULT_REQUESTS_RAW;
-  const notificationsRaw =
-    window.localStorage.getItem(STORAGE_KEYS.notifications) ??
-    DEFAULT_NOTIFICATIONS_RAW;
-  const messagesRaw =
-    window.localStorage.getItem(STORAGE_KEYS.messages) ?? DEFAULT_MESSAGES_RAW;
-
-  const nextSignature = `${usersRaw}|${requestsRaw}|${notificationsRaw}|${messagesRaw}`;
-
-  if (cachedSnapshotSignature === nextSignature) {
-    return cachedSnapshot;
-  }
-
-  cachedSnapshot = {
-    users: parseStoredValue(usersRaw, demoUsers),
-    requests: parseStoredValue(requestsRaw, communityRequests),
-    notifications: parseStoredValue(notificationsRaw, communityNotifications),
-    messages: parseStoredValue(messagesRaw, DEFAULT_MESSAGES),
-  };
-
-  cachedSnapshotSignature = nextSignature;
-
-  return cachedSnapshot;
-}
-
-function writeCommunityState(state: CommunityState) {
-  writeLocalStorage(STORAGE_KEYS.users, state.users);
-  writeLocalStorage(STORAGE_KEYS.requests, state.requests);
-  writeLocalStorage(STORAGE_KEYS.notifications, state.notifications);
-  writeLocalStorage(STORAGE_KEYS.messages, state.messages);
-  emitCommunityUpdate();
+  return fallback;
 }
 
 export function useCommunityStore() {
-  return useSyncExternalStore(subscribe, readCommunityState, getServerSnapshot);
+  const [state, setState] = useState<CommunityState>(emptyState);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function refresh() {
+    setIsLoading(true);
+
+    try {
+      const nextState = await fetchCommunityState();
+      setState(nextState);
+      setError(null);
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Failed to load community data."));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    let ignore = false;
+
+    const load = async () => {
+      setIsLoading(true);
+
+      try {
+        const nextState = await fetchCommunityState();
+
+        if (!ignore) {
+          setState(nextState);
+          setError(null);
+        }
+      } catch (error: unknown) {
+        if (!ignore) {
+          setError(getApiErrorMessage(error, "Failed to load community data."));
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  return { ...state, isLoading, error, refresh };
 }
 
 export function getCurrentCommunityUser(
@@ -247,242 +191,75 @@ export function getCurrentCommunityUser(
   session: AuthSession,
 ) {
   return (
+    state.currentUser ??
     state.users.find((user) => user.email === session.email) ??
-    state.users.find((user) => user.name === session.name) ??
-    state.users[0]
+    state.users.find((user) => user.name === session.name) ?? {
+      id: "current-user",
+      name: session.name || "Community Member",
+      email: session.email,
+      role: session.role,
+      location: "Remote",
+      interests: [],
+      skills: [],
+      trustScore: 70,
+      badges: ["New Member"],
+      contributions: 0,
+    }
   );
 }
 
-export function updateUserById(
-  userId: string,
-  updates: Partial<DemoUser>,
-): DemoUser | undefined {
-  const state = readCommunityState();
-  const nextUsers = state.users.map((user) =>
-    user.id === userId ? { ...user, ...updates } : user,
-  );
-  const updatedUser = nextUsers.find((user) => user.id === userId);
-
-  writeCommunityState({ ...state, users: nextUsers });
-  return updatedUser;
-}
-
-export function createUser(payload: {
-  name: string;
-  email: string;
-  role: DemoRole;
-  password?: string;
+export async function updateCurrentUserProfile(payload: {
+  name?: string;
+  location?: string;
+  skills?: string[] | string;
+  interests?: string[] | string;
+  role?: CommunityRole;
 }) {
-  const state = readCommunityState();
-  const newUser: DemoUser = {
-    id: makeId("user"),
-    name: payload.name,
-    email: payload.email,
-    role: payload.role,
-    location: "Remote",
-    interests: ["Community Growth", "Peer Learning"],
-    skills: [],
-    trustScore: 70,
-    badges: ["New Member"],
-    contributions: 0,
-  };
-
-  writeCommunityState({
-    ...state,
-    users: [newUser, ...state.users],
-  });
-
-  return newUser;
+  const response = await api.put("/api/auth/me", payload);
+  return response.data.user as CommunityUser;
 }
 
-export function markNotificationRead(notificationId: string) {
-  const state = readCommunityState();
-  const nextNotifications = state.notifications.map((notification) =>
-    notification.id === notificationId
-      ? { ...notification, status: "Read" as const }
-      : notification,
-  );
-
-  writeCommunityState({ ...state, notifications: nextNotifications });
+export async function markNotificationRead(notificationId: string) {
+  const response = await api.patch(`/api/notifications/${notificationId}/read`);
+  return response.data.notification as CommunityNotification;
 }
 
-export function markAllNotificationsRead() {
-  const state = readCommunityState();
-  writeCommunityState({
-    ...state,
-    notifications: state.notifications.map((notification) => ({
-      ...notification,
-      status: "Read" as const,
-    })),
-  });
+export async function markAllNotificationsRead() {
+  const response = await api.patch("/api/notifications/read-all");
+  return response.data.notifications as CommunityNotification[];
 }
 
-export function sendMessage(payload: {
-  from: string;
-  to: string;
+export async function sendMessage(payload: {
+  recipientId: string;
   text: string;
+  requestId?: string;
 }) {
-  const state = readCommunityState();
-  const newMessage: CommunityMessage = {
-    id: makeId("msg"),
-    from: payload.from,
-    to: payload.to,
-    text: payload.text,
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    }),
-  };
-
-  writeCommunityState({
-    ...state,
-    messages: [newMessage, ...state.messages],
-  });
-
-  return newMessage;
+  const response = await api.post("/api/messages", payload);
+  return response.data.data as CommunityMessage;
 }
 
-export function updateCurrentUserProfile(
-  session: AuthSession,
-  updates: Partial<DemoUser>,
-) {
-  const state = readCommunityState();
-  const currentUser = getCurrentCommunityUser(state, session);
-
-  return updateUserById(currentUser.id, updates);
+export async function addHelperToRequest(requestId: string) {
+  const response = await api.post(`/api/requests/${requestId}/helpers`);
+  return response.data.request as CommunityRequest;
 }
 
-export function addHelperToRequest(requestId: string, helperId: string) {
-  const state = readCommunityState();
-  let wasAdded = false;
-
-  const nextRequests = state.requests.map((request) => {
-    if (request.id !== requestId || request.helperIds.includes(helperId)) {
-      return request;
-    }
-
-    wasAdded = true;
-    return {
-      ...request,
-      helperIds: [...request.helperIds, helperId],
-    };
+export async function markRequestSolved(requestId: string) {
+  const response = await api.patch(`/api/requests/${requestId}/status`, {
+    status: "Solved",
   });
-
-  if (!wasAdded) {
-    return false;
-  }
-
-  const helper = state.users.find((user) => user.id === helperId);
-  const targetRequest = state.requests.find(
-    (request) => request.id === requestId,
-  );
-  const nextNotifications = [
-    {
-      id: makeId("note"),
-      title: `${helper?.name ?? "A helper"} offered help on "${targetRequest?.title ?? "your request"}"`,
-      type: "Match",
-      status: "Unread" as const,
-      time: "Just now",
-    },
-    ...state.notifications,
-  ];
-
-  writeCommunityState({
-    ...state,
-    requests: nextRequests,
-    notifications: nextNotifications,
-  });
-
-  return true;
+  return response.data.request as CommunityRequest;
 }
 
-export function markRequestSolved(requestId: string, actorId: string) {
-  const state = readCommunityState();
-  let solvedRequestTitle = "";
-
-  const nextRequests = state.requests.map((request) => {
-    if (request.id !== requestId) {
-      return request;
-    }
-
-    solvedRequestTitle = request.title;
-    return {
-      ...request,
-      status: "Solved" as const,
-    };
-  });
-
-  const nextUsers = state.users.map((user) =>
-    user.id === actorId
-      ? {
-          ...user,
-          trustScore: Math.min(100, user.trustScore + 3),
-          contributions: user.contributions + 1,
-        }
-      : user,
-  );
-
-  const nextNotifications = [
-    {
-      id: makeId("note"),
-      title: `"${solvedRequestTitle}" was marked as solved`,
-      type: "Status",
-      status: "Unread" as const,
-      time: "Just now",
-    },
-    ...state.notifications,
-  ];
-
-  writeCommunityState({
-    users: nextUsers,
-    requests: nextRequests,
-    notifications: nextNotifications,
-    messages: state.messages,
-  });
-}
-
-export function createRequest(payload: {
+export async function createRequest(payload: {
   title: string;
   description: string;
-  tags: string[];
+  tags: string[] | string;
   category: string;
   urgency: CommunityRequest["urgency"];
-  requesterId: string;
   location: string;
 }) {
-  const state = readCommunityState();
-  const newRequest: CommunityRequest = {
-    id: makeId("req"),
-    title: payload.title,
-    description: payload.description,
-    tags: payload.tags,
-    category: payload.category,
-    urgency: payload.urgency,
-    location: payload.location,
-    requesterId: payload.requesterId,
-    helperIds: [],
-    status: "Open",
-    aiSummary: `AI summary: ${payload.category} request with ${payload.urgency.toLowerCase()} urgency. Best suited for members with ${payload.tags.join(", ") || "relevant"} expertise.`,
-  };
-
-  const nextNotifications = [
-    {
-      id: makeId("note"),
-      title: `Your request "${newRequest.title}" is now live in the community feed`,
-      type: "Request",
-      status: "Unread" as const,
-      time: "Just now",
-    },
-    ...state.notifications,
-  ];
-
-  writeCommunityState({
-    ...state,
-    requests: [newRequest, ...state.requests],
-    notifications: nextNotifications,
-  });
-
-  return newRequest;
+  const response = await api.post("/api/requests", payload);
+  return response.data.request as CommunityRequest;
 }
 
 export function suggestCategory(text: string) {
@@ -554,7 +331,7 @@ export function rewriteDescription(text: string) {
   return `I need focused support with ${trimmed.charAt(0).toLowerCase() + trimmed.slice(1)}. A helper who can provide practical next steps, examples, and a quick review would be ideal.`;
 }
 
-export function deriveSkillSuggestions(user: DemoUser) {
+export function deriveSkillSuggestions(user: CommunityUser) {
   const joined = [...user.interests, ...user.skills].join(" ").toLowerCase();
   const helpWith = SKILLS.filter(
     (item) =>
@@ -570,9 +347,7 @@ export function deriveSkillSuggestions(user: DemoUser) {
     helpWith: helpWith.length
       ? helpWith
       : ["UI/UX", "Career Guidance", "Public Speaking"],
-    needHelp: needHelp.length
-      ? needHelp
-      : ["Git/GitHub", "Interview Prep", "React"],
+    needHelp: needHelp.length ? needHelp : ["Git/GitHub", "Interview Prep", "React"],
   };
 }
 
@@ -589,3 +364,4 @@ export function getTopCategory(requests: CommunityRequest[]) {
     Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Community"
   );
 }
+

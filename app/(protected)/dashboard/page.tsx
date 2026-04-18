@@ -1,9 +1,9 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 
 import Header from "../../components/header/header";
-import { readDemoSession } from "../../utils/auth-session";
+import { readAuthSession } from "../../utils/auth-session";
 import {
   deriveSkillSuggestions,
   getCurrentCommunityUser,
@@ -12,7 +12,7 @@ import {
 } from "../../utils/community-store";
 
 export default function DashboardPage() {
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
   const currentUser = getCurrentCommunityUser(state, session);
 
@@ -104,7 +104,7 @@ export default function DashboardPage() {
 
             <div className="stack">
               {state.requests.map((request) => {
-                const requester = state.users.find(
+                const requester = request.requester ?? state.users.find(
                   (user) => user.id === request.requesterId,
                 );
 
@@ -135,10 +135,7 @@ export default function DashboardPage() {
                       ))}
                     </div>
 
-                    <div
-                      className="list-item"
-                      style={{ paddingBottom: 0, borderBottom: 0 }}
-                    >
+                    <div className="list-item" style={{ paddingBottom: 0, borderBottom: 0 }}>
                       <div>
                         <strong>{requester?.name ?? "Unknown user"}</strong>
                         <p>
@@ -146,10 +143,7 @@ export default function DashboardPage() {
                           {request.helperIds.length === 1 ? "" : "s"} interested
                         </p>
                       </div>
-                      <Link
-                        href={`/requests/${request.id}`}
-                        className="btn btn-secondary"
-                      >
+                      <Link href={`/requests/${request.id}`} className="btn btn-secondary">
                         Open details
                       </Link>
                     </div>
@@ -200,3 +194,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

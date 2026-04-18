@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -7,8 +7,9 @@ import { ChevronRight, User, MapPin, Sparkles, CheckCircle2 } from "lucide-react
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
-import { readDemoSession } from "../../utils/auth-session";
+import { readAuthSession } from "../../utils/auth-session";
 import {
+  getApiErrorMessage,
   getCurrentCommunityUser,
   updateCurrentUserProfile,
   useCommunityStore,
@@ -30,7 +31,7 @@ const suggestedSkills = [
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
   const currentUser = getCurrentCommunityUser(state, session);
   const [name, setName] = useState(currentUser.name);
@@ -61,17 +62,22 @@ export default function OnboardingPage() {
     );
   };
 
-  const finish = () => {
-    updateCurrentUserProfile(session, {
-      name: name.trim(),
-      location: location.trim(),
-      skills: selectedSkills,
-      interests: currentUser.interests.length
-        ? currentUser.interests
-        : ["Community Growth", "Peer Learning"],
-    });
-    toast.success("Onboarding saved. Dashboard ready.");
-    router.push("/dashboard");
+  const finish = async () => {
+    try {
+      await updateCurrentUserProfile({
+        name: name.trim(),
+        location: location.trim(),
+        skills: selectedSkills,
+        interests: currentUser.interests.length
+          ? currentUser.interests
+          : ["Community Growth", "Peer Learning"],
+      });
+      await state.refresh();
+      toast.success("Onboarding saved. Dashboard ready.");
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to save onboarding."));
+    }
   };
 
   return (
@@ -274,3 +280,4 @@ export default function OnboardingPage() {
     </div>
   );
 }
+

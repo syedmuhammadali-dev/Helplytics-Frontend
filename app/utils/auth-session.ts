@@ -1,6 +1,4 @@
-import { deleteCookie, getCookie, setCookie } from "cookies-next";
-
-import { demoUsers, type DemoRole, getUserByName } from "./mock-community";
+﻿import { deleteCookie, getCookie, setCookie } from "cookies-next";
 
 export const AUTH_TOKEN_KEY = "auth_token";
 export const AUTH_USER_NAME_KEY = "auth_user_name";
@@ -13,21 +11,23 @@ export const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 7,
 };
 
+export type CommunityRole = "Both" | "Need Help" | "Can Help";
+
 export type AuthSession = {
   name: string;
   email: string;
-  role: DemoRole;
+  role: CommunityRole;
 };
 
 export type LoginValues = {
   email: string;
   password: string;
-  role: DemoRole;
 };
 
 export type SignupValues = LoginValues & {
   name: string;
   confirmPassword: string;
+  role: CommunityRole;
 };
 
 export type ValidationErrors<T extends string> = Partial<Record<T, string>>;
@@ -61,10 +61,6 @@ export function validateLoginForm(values: LoginValues) {
       "Password must be at least 8 characters with upper, lower, and number.";
   }
 
-  if (!values.role) {
-    errors.role = "Select a role to continue.";
-  }
-
   return errors;
 }
 
@@ -85,33 +81,43 @@ export function validateSignupForm(values: SignupValues) {
     errors.confirmPassword = "Passwords do not match.";
   }
 
+  if (!values.role) {
+    errors.role = "Select a role to continue.";
+  }
+
   return errors;
 }
 
-export function startDemoSession(session: AuthSession) {
-  setCookie(AUTH_TOKEN_KEY, "mock_token_123", COOKIE_OPTIONS);
-  setCookie(AUTH_USER_NAME_KEY, session.name, COOKIE_OPTIONS);
-  setCookie(AUTH_USER_EMAIL_KEY, session.email, COOKIE_OPTIONS);
-  setCookie(AUTH_USER_ROLE_KEY, session.role, COOKIE_OPTIONS);
+export function startAuthSession(
+  token: string,
+  user: { name: string; email: string; role?: string },
+) {
+  setCookie(AUTH_TOKEN_KEY, token, COOKIE_OPTIONS);
+  setCookie(AUTH_USER_NAME_KEY, user.name, COOKIE_OPTIONS);
+  setCookie(AUTH_USER_EMAIL_KEY, user.email, COOKIE_OPTIONS);
+  if (user.role) {
+    setCookie(AUTH_USER_ROLE_KEY, user.role, COOKIE_OPTIONS);
+  }
 }
 
-export function clearDemoSession() {
+export function clearAuthSession() {
   deleteCookie(AUTH_TOKEN_KEY, { path: "/" });
   deleteCookie(AUTH_USER_NAME_KEY, { path: "/" });
   deleteCookie(AUTH_USER_EMAIL_KEY, { path: "/" });
   deleteCookie(AUTH_USER_ROLE_KEY, { path: "/" });
 }
 
-export function readDemoSession(): AuthSession {
-  const storedName = readCookieValue(AUTH_USER_NAME_KEY) ?? demoUsers[0].name;
-  const matchedUser = getUserByName(storedName);
+export function readAuthSession(): AuthSession {
+  const storedName = readCookieValue(AUTH_USER_NAME_KEY) ?? "";
+  const storedEmail = readCookieValue(AUTH_USER_EMAIL_KEY) ?? "";
+  const storedRole = readCookieValue(AUTH_USER_ROLE_KEY) as
+    | CommunityRole
+    | undefined;
 
   return {
     name: storedName,
-    email: readCookieValue(AUTH_USER_EMAIL_KEY) ?? matchedUser.email,
-    role:
-      (readCookieValue(AUTH_USER_ROLE_KEY) as DemoRole | undefined) ??
-      matchedUser.role,
+    email: storedEmail,
+    role: storedRole ?? "Need Help",
   };
 }
 
@@ -122,3 +128,4 @@ function readCookieValue(key: string) {
 
   return getCookie(key)?.toString();
 }
+

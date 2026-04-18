@@ -9,10 +9,10 @@ import {
   getTopCategory,
   useCommunityStore,
 } from "../../utils/community-store";
-import { readDemoSession } from "../../utils/auth-session";
+import { readAuthSession } from "../../utils/auth-session";
 
 export default function AICenterPage() {
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
   const currentUser = getCurrentCommunityUser(state, session);
   const suggestions = deriveSkillSuggestions(currentUser);

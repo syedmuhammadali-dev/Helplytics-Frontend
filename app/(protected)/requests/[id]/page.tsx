@@ -1,13 +1,14 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "react-toastify";
 
 import Header from "../../../components/header/header";
-import { readDemoSession } from "../../../utils/auth-session";
+import { readAuthSession } from "../../../utils/auth-session";
 import {
   addHelperToRequest,
+  getApiErrorMessage,
   getCurrentCommunityUser,
   markRequestSolved,
   useCommunityStore,
@@ -15,34 +16,66 @@ import {
 
 export default function RequestDetailPage() {
   const params = useParams<{ id: string }>();
-  const session = readDemoSession();
+  const session = readAuthSession();
   const state = useCommunityStore();
-  const currentUser = getCurrentCommunityUser(state, session);
+  getCurrentCommunityUser(state, session);
   const request =
     state.requests.find((item) => item.id === params.id) ?? state.requests[0];
-  const requester = state.users.find((user) => user.id === request.requesterId);
-  const helpers = state.users.filter((user) => request.helperIds.includes(user.id));
+  const requester =
+    request?.requester ??
+    state.users.find((user) => user.id === request?.requesterId);
+  const helpers =
+    request?.helpers?.length
+      ? request.helpers
+      : state.users.filter((user) => request?.helperIds.includes(user.id));
 
-  const handleHelp = () => {
-    const wasAdded = addHelperToRequest(request.id, currentUser.id);
-
-    if (!wasAdded) {
-      toast.info("You are already listed as a helper on this request.");
+  const handleHelp = async () => {
+    if (!request) {
       return;
     }
 
-    toast.success("You have been added to the helper pool.");
+    try {
+      await addHelperToRequest(request.id);
+      await state.refresh();
+      toast.success("You have been added to the helper pool.");
+    } catch (error: unknown) {
+      toast.info(getApiErrorMessage(error, "Unable to join helper pool."));
+    }
   };
 
-  const handleSolved = () => {
+  const handleSolved = async () => {
+    if (!request) {
+      return;
+    }
+
     if (request.status === "Solved") {
       toast.info("This request is already marked as solved.");
       return;
     }
 
-    markRequestSolved(request.id, currentUser.id);
-    toast.success("Request marked as solved.");
+    try {
+      await markRequestSolved(request.id);
+      await state.refresh();
+      toast.success("Request marked as solved.");
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to update request."));
+    }
   };
+
+  if (!request) {
+    return (
+      <div className="site-shell">
+        <Header />
+        <main className="container section">
+          <div className="panel">
+            <p className="eyebrow">Request Detail</p>
+            <h1>Request not found</h1>
+            <p>The request you are looking for is missing or has not loaded yet.</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="site-shell">
@@ -161,3 +194,4 @@ export default function RequestDetailPage() {
     </div>
   );
 }
+

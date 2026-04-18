@@ -1,52 +1,39 @@
-"use client";
+﻿"use client";
 
+import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
 import {
-  startDemoSession,
+  startAuthSession,
   validateLoginForm,
   type LoginValues,
   type ValidationErrors,
 } from "../../utils/auth-session";
-import { type DemoRole } from "../../utils/mock-community";
-import { updateUserById, useCommunityStore } from "../../utils/community-store";
+import api from "../../utils/api";
 
-const DEFAULT_PASSWORD = "DemoPass123";
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { message?: string } | undefined;
+    return data?.message || fallback;
+  }
+
+  return fallback;
+};
 
 export default function LoginPage() {
   const router = useRouter();
-  const { users } = useCommunityStore();
-  const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? "");
   const [values, setValues] = useState<LoginValues>({
-    email: users[0]?.email ?? "",
-    password: DEFAULT_PASSWORD,
-    role: users[0]?.role ?? "Both",
+    email: "",
+    password: "",
   });
   const [errors, setErrors] = useState<ValidationErrors<keyof LoginValues>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-
-  const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0];
-
-  const handleUserChange = (userId: string) => {
-    const nextUser = users.find((user) => user.id === userId) ?? users[0];
-    if (!nextUser) {
-      return;
-    }
-
-    setSelectedUserId(userId);
-    setValues((currentValues) => ({
-      ...currentValues,
-      email: nextUser.email,
-      role: nextUser.role,
-    }));
-    setErrors({});
-  };
 
   const updateField = <T extends keyof LoginValues>(
     field: T,
@@ -56,7 +43,7 @@ export default function LoginPage() {
     setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const nextErrors = validateLoginForm(values);
@@ -69,26 +56,33 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    window.setTimeout(() => {
-      if (!selectedUser) {
-        setIsLoading(false);
-        toast.error("No account is available to log in.");
-        return;
-      }
+    try {
+      const response = await api.post("/api/auth/login", {
+        email: values.email.trim(),
+        password: values.password,
+      });
 
-      updateUserById(selectedUser.id, {
-        email: values.email.trim(),
-        role: values.role,
+      const { token, message } = response.data;
+      const profileResponse = await api.get("/api/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      startDemoSession({
-        name: selectedUser.name,
-        email: values.email.trim(),
-        role: values.role,
+
+      const user = profileResponse.data.user;
+
+      startAuthSession(token, {
+        name: user.name,
+        email: user.email,
+        role: user.role,
       });
-      toast.success("Welcome back. Redirecting to your dashboard.");
+
+      toast.success(message || "Welcome back! Redirecting to your dashboard.");
       router.push("/dashboard");
       router.refresh();
-    }, 600);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "Invalid email or password."));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -121,63 +115,11 @@ export default function LoginPage() {
             <p className="eyebrow">Login</p>
             <h2>Authenticate your community profile</h2>
             <p className="helper-copy">
-              Use one of the seeded demo accounts below. Validation is now
-              enforced before entering the dashboard.
+              Sign in with your registered account to continue into the live
+              community dashboard.
             </p>
 
             <form onSubmit={handleSubmit} className="stack">
-              <div className="field">
-                <label htmlFor="demo-user">Select demo user</label>
-                <div className="relative">
-                  <select
-                    id="demo-user"
-                    value={selectedUser?.id ?? ""}
-                    onChange={(event) => handleUserChange(event.target.value)}
-                    className="form-select"
-                  >
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
-                    size={18}
-                  />
-                </div>
-              </div>
-
-              <div className="field">
-                <label htmlFor="role">Role selection</label>
-                <div className="relative">
-                  <select
-                    id="role"
-                    value={values.role}
-                    onChange={(event) =>
-                      updateField("role", event.target.value as DemoRole)
-                    }
-                    className={`form-select ${errors.role ? "input-error" : ""}`}
-                  >
-                    <option value="Both">Both</option>
-                    <option value="Need Help">Need Help</option>
-                    <option value="Can Help">Can Help</option>
-                  </select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
-                    size={18}
-                  />
-                </div>
-                {errors.role ? (
-                  <span className="error-text">{errors.role}</span>
-                ) : (
-                  <span className="helper-copy">
-                    Recommended role for {selectedUser.name}:{" "}
-                    {selectedUser.role}
-                  </span>
-                )}
-              </div>
-
               <div className="auth-grid">
                 <div className="field">
                   <label htmlFor="email">Email</label>
@@ -185,19 +127,13 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     value={values.email}
-                    onChange={(event) =>
-                      updateField("email", event.target.value)
-                    }
+                    onChange={(event) => updateField("email", event.target.value)}
                     className={errors.email ? "input-error" : undefined}
                     placeholder="you@example.com"
                     autoComplete="email"
                   />
-                  {errors.email ? (
+                  {errors.email && (
                     <span className="error-text">{errors.email}</span>
-                  ) : (
-                    <span className="helper-copy">
-                      You can keep the demo email or replace it with your own.
-                    </span>
                   )}
                 </div>
 
@@ -211,9 +147,7 @@ export default function LoginPage() {
                       onChange={(event) =>
                         updateField("password", event.target.value)
                       }
-                      className={
-                        errors.password ? "input-error pr-12" : "pr-12"
-                      }
+                      className={errors.password ? "input-error pr-12" : "pr-12"}
                       placeholder="Enter your password"
                       autoComplete="current-password"
                     />
@@ -225,12 +159,8 @@ export default function LoginPage() {
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
-                  {errors.password ? (
+                  {errors.password && (
                     <span className="error-text">{errors.password}</span>
-                  ) : (
-                    <span className="helper-copy">
-                      Demo password: <strong>{DEFAULT_PASSWORD}</strong>
-                    </span>
                   )}
                 </div>
               </div>
@@ -256,3 +186,4 @@ export default function LoginPage() {
     </div>
   );
 }
+

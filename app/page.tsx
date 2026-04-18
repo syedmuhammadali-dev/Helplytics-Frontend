@@ -46,7 +46,7 @@ export default function Home() {
               <span className="section-label text-text-muted">
                 SMIT Grand Coding Night 2026
               </span>
-              <h1 className="text-6xl md:text-7xl font-bold leading-[1.1] text-dark tracking-tight">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold leading-[1.1] text-dark tracking-tight">
                 Find help faster.
                 <br />
                 Become help that
@@ -57,7 +57,7 @@ export default function Home() {
 
             <motion.p
               variants={itemVariants}
-              className="text-lg text-text-muted max-w-lg leading-relaxed"
+              className="text-base sm:text-lg text-text-muted max-w-lg leading-relaxed"
             >
               HelpHub AI is a community-powered support network for students,
               mentors, creators, and builders. Ask for help, offer help, track
@@ -66,12 +66,12 @@ export default function Home() {
 
             <motion.div
               variants={itemVariants}
-              className="flex flex-wrap gap-4"
+              className="flex flex-col sm:flex-row gap-4"
             >
-              <Link href="/login" className="btn-primary">
+              <Link href="/login" className="btn-primary w-full sm:w-auto text-center">
                 Open product demo
               </Link>
-              <Link href="/login" className="btn-secondary">
+              <Link href="/login" className="btn-secondary w-full sm:w-auto text-center">
                 Post a request
               </Link>
             </motion.div>
@@ -79,7 +79,7 @@ export default function Home() {
             {/* Stats Cards */}
             <motion.div
               variants={itemVariants}
-              className="grid grid-cols-3 gap-4 mt-8"
+              className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8"
             >
               {[
                 {

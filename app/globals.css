@@ -66,6 +66,7 @@ body {
     linear-gradient(180deg, #f7f0e6 0%, #f4efe6 52%, #efe7da 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 a {
@@ -597,6 +598,7 @@ textarea::placeholder {
   display: grid;
   gap: 24px;
   grid-template-columns: 1fr 1fr;
+  overflow: hidden;
 }
 
 .auth-card,

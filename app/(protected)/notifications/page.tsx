@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
 import {
+  getApiErrorMessage,
   markAllNotificationsRead,
   markNotificationRead,
   useCommunityStore,
@@ -43,8 +44,17 @@ export default function NotificationsPage() {
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => {
-                  markAllNotificationsRead();
-                  toast.success("All notifications marked as read.");
+                  void (async () => {
+                    try {
+                      await markAllNotificationsRead();
+                      await state.refresh();
+                      toast.success("All notifications marked as read.");
+                    } catch (error: unknown) {
+                      toast.error(
+                        getApiErrorMessage(error, "Failed to update notifications."),
+                      );
+                    }
+                  })();
                 }}
               >
                 Mark all as read
@@ -56,7 +66,18 @@ export default function NotificationsPage() {
                 <button
                   key={notif.id}
                   type="button"
-                  onClick={() => markNotificationRead(notif.id)}
+                  onClick={() => {
+                    void (async () => {
+                      try {
+                        await markNotificationRead(notif.id);
+                        await state.refresh();
+                      } catch (error: unknown) {
+                        toast.error(
+                          getApiErrorMessage(error, "Failed to update notification."),
+                        );
+                      }
+                    })();
+                  }}
                   className="p-6 rounded-[1.5rem] bg-bg-card border border-black/5 hover:bg-white hover:shadow-lg transition-all text-left cursor-pointer flex items-center justify-between gap-4 group"
                 >
                   <div className="flex flex-col gap-1">
@@ -85,3 +106,4 @@ export default function NotificationsPage() {
     </div>
   );
 }
+

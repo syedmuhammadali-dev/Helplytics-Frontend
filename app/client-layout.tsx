@@ -1,13 +1,11 @@
-"use client";
+﻿"use client";
 
 import "react-toastify/dist/ReactToastify.css";
 
-import React, { ReactNode, useEffect } from "react";
+import React, { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { ToastContainer } from "react-toastify";
-
-import { ensureCommunitySeeded } from "./utils/community-store";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -15,10 +13,6 @@ interface ClientLayoutProps {
 
 const ClientLayout = ({ children }: ClientLayoutProps) => {
   const pathname = usePathname();
-
-  useEffect(() => {
-    ensureCommunitySeeded();
-  }, []);
 
   if (!pathname) {
     return <>{children}</>;
@@ -49,3 +43,4 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
 };
 
 export default ClientLayout;
+
