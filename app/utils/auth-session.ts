@@ -56,9 +56,6 @@ export function validateLoginForm(values: LoginValues) {
 
   if (!values.password.trim()) {
     errors.password = "Password is required.";
-  } else if (!isStrongPassword(values.password)) {
-    errors.password =
-      "Password must be at least 8 characters with upper, lower, and number.";
   }
 
   return errors;
@@ -68,6 +65,11 @@ export function validateSignupForm(values: SignupValues) {
   const errors: ValidationErrors<keyof SignupValues> = {
     ...validateLoginForm(values),
   };
+
+  if (values.password.trim() && !isStrongPassword(values.password)) {
+    errors.password =
+      "Password must be at least 8 characters with upper, lower, and number.";
+  }
 
   if (!values.name.trim()) {
     errors.name = "Full name is required.";

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
 import { toast } from "react-toastify";
 
@@ -30,6 +31,7 @@ export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const canUseDOM = typeof document !== "undefined";
 
   const isProtected = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
@@ -44,8 +46,9 @@ export default function Header() {
     router.refresh();
   };
   return (
-    <header className="topbar">
-      <div className="container h-20 flex items-center justify-between gap-4">
+    <>
+      <header className="topbar">
+        <div className="container h-20 flex items-center justify-between gap-4">
         <Link href="/" className="brand flex items-center gap-2 shrink-0">
           <span className="brand-badge w-10 h-10 flex items-center justify-center bg-primary text-white rounded-xl font-bold text-xl shrink-0">
             H
@@ -153,101 +156,106 @@ export default function Header() {
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
+        </div>
+      </header>
 
-        {/* Mobile Navigation Overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-100 min-[1130px]:hidden overflow-hidden">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="absolute inset-0 bg-dark/20 backdrop-blur-md"
-              />
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="absolute top-0 right-0 bottom-0 w-70 bg-white shadow-2xl p-8 flex flex-col"
-              >
-                <div className="flex flex-col gap-8 mt-12 overflow-y-auto">
-                  <nav className="flex flex-col gap-4">
-                    {links.map((link) => {
-                      const isActive =
-                        pathname === link.href ||
-                        pathname.startsWith(`${link.href}/`);
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={`text-lg font-bold transition-colors ${
-                            isActive ? "text-primary" : "text-text-muted"
-                          }`}
-                        >
-                          {link.label}
-                        </Link>
-                      );
-                    })}
-                  </nav>
+      {/* Mobile Navigation Overlay */}
+      {canUseDOM &&
+        createPortal(
+          <AnimatePresence>
+            {isMobileMenuOpen && (
+              <div className="fixed inset-0 z-100 min-[1130px]:hidden overflow-hidden">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="absolute inset-0 bg-dark/20 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                  className="absolute top-0 right-0 bottom-0 w-70 bg-white shadow-2xl p-8 flex flex-col"
+                >
+                  <div className="flex flex-col gap-8 mt-12 overflow-y-auto">
+                    <nav className="flex flex-col gap-4">
+                      {links.map((link) => {
+                        const isActive =
+                          pathname === link.href ||
+                          pathname.startsWith(`${link.href}/`);
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className={`text-lg font-bold transition-colors ${
+                              isActive ? "text-primary" : "text-text-muted"
+                            }`}
+                          >
+                            {link.label}
+                          </Link>
+                        );
+                      })}
+                    </nav>
 
-                  <div className="h-px w-full bg-black/5" />
+                    <div className="h-px w-full bg-black/5" />
 
-                  <div className="flex flex-col gap-4">
-                    {isProtected ? (
-                      <>
-                        <Link
-                          href="/notifications"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="text-lg font-bold text-text-muted"
-                        >
-                          Notifications
-                        </Link>
-                        <Link
-                          href="/ai-center"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="btn btn-primary w-full py-4!"
-                        >
-                          AI Center
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleSignOut();
-                            setIsMobileMenuOpen(false);
-                          }}
-                          className="btn btn-secondary w-full py-4!"
-                        >
-                          Sign out
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <Link
-                          href="/leaderboard"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="text-lg font-bold text-text-muted"
-                        >
-                          Leaderboard
-                        </Link>
-                        <Link
-                          href="/login"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className="btn btn-primary w-full py-4!"
-                        >
-                          Join HelpHub
-                        </Link>
-                      </>
-                    )}
+                    <div className="flex flex-col gap-4">
+                      {isProtected ? (
+                        <>
+                          <Link
+                            href="/notifications"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-lg font-bold text-text-muted"
+                          >
+                            Notifications
+                          </Link>
+                          <Link
+                            href="/ai-center"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="btn btn-primary w-full py-4!"
+                          >
+                            AI Center
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleSignOut();
+                              setIsMobileMenuOpen(false);
+                            }}
+                            className="btn btn-secondary w-full py-4!"
+                          >
+                            Sign out
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Link
+                            href="/leaderboard"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="text-lg font-bold text-text-muted"
+                          >
+                            Leaderboard
+                          </Link>
+                          <Link
+                            href="/login"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="btn btn-primary w-full py-4!"
+                          >
+                            Join HelpHub
+                          </Link>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
-    </header>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
   );
 }
