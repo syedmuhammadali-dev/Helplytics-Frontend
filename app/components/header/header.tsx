@@ -1,56 +1,135 @@
 "use client";
 
-import { Bell, Search, ChevronDown, HelpCircle } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
+import { protectedRoutes } from "../../utils/routes";
+
+const getLinks = (pathname: string, isProtected: boolean) => {
+  if (!isProtected) {
+    return [
+      { name: "Home", href: "/" },
+      { name: "Explore", href: "/explore" },
+      { name: "Leaderboard", href: "/leaderboard" },
+      { name: "AI Center", href: "/ai-center" },
+    ];
+  }
+
+  if (pathname.includes("/leaderboard")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Explore", href: "/explore" },
+      { name: "Leaderboard", href: "/leaderboard" },
+    ];
+  }
+
+  if (pathname.includes("/notifications")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Explore", href: "/explore" },
+      { name: "Notifications", href: "/notifications" },
+    ];
+  }
+
+  if (pathname.includes("/create-request")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Explore", href: "/explore" },
+      { name: "Create Request", href: "/create-request" },
+    ];
+  }
+
+  if (pathname.includes("/explore")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Explore", href: "/explore" },
+      { name: "Leaderboard", href: "/leaderboard" },
+      { name: "Notifications", href: "/notifications" },
+    ];
+  }
+
+  if (pathname.includes("/requests/")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Explore", href: "/explore" },
+      { name: "Messages", href: "/messages" },
+    ];
+  }
+
+  if (pathname.includes("/ai-center")) {
+    return [
+      { name: "Dashboard", href: "/dashboard" },
+      { name: "Create Request", href: "/create-request" },
+      { name: "AI Center", href: "/ai-center" },
+    ];
+  }
+
+  return [
+    { name: "Dashboard", href: "/dashboard" },
+    { name: "Explore", href: "/explore" },
+    { name: "Messages", href: "/messages" },
+    { name: "AI Center", href: "/ai-center" },
+    { name: "Profile", href: "/profile" },
+  ];
+};
 
 export default function Header() {
+  const pathname = usePathname();
+  const isProtected = protectedRoutes.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`)
+  );
+
+  const links = getLinks(pathname, isProtected);
+
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-10">
-      <div className="flex items-center gap-4 flex-1">
-        <div className="relative w-full max-w-md group">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
-            size={18}
-          />
-          <input
-            type="text"
-            placeholder="Search anything..."
-            className="w-full bg-slate-50 border-none rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-indigo-500/20 transition-all outline-none"
-          />
-        </div>
+    <header className="glass-header sticky top-0 z-50 px-8 py-4 flex items-center justify-between">
+      <div className="flex items-center gap-12">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+            H
+          </div>
+          <span className="font-bold text-xl tracking-tight text-dark">HelpHub AI</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-1">
+          {links.map((link) => (
+            <Link
+              key={link.name}
+              href={link.href}
+              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                pathname === link.href
+                  ? "bg-bg-card text-dark shadow-sm"
+                  : "text-text-muted hover:text-dark hover:bg-black/5"
+              }`}
+            >
+              {link.name}
+            </Link>
+          ))}
+        </nav>
       </div>
 
-      <div className="flex items-center gap-3">
-        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors relative">
-          <Bell size={20} />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-        </button>
-
-        <button className="p-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors">
-          <HelpCircle size={20} />
-        </button>
-
-        <div className="h-8 w-px bg-slate-200 mx-2" />
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-2 p-1.5 hover:bg-slate-50 rounded-xl transition-colors group"
-        >
-          <div className="w-8 h-8 rounded-lg bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-md shadow-indigo-500/10">
-            AD
+      <div className="flex items-center gap-6">
+        {!isProtected ? (
+          <>
+            <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+              <span className="notif-dot" />
+              Live community signals
+            </div>
+            <Link href="/login" className="btn-primary text-xs px-6 py-2.5">
+              Join the platform
+            </Link>
+          </>
+        ) : (
+          <div className="flex items-center gap-6">
+             <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
+              <span className="notif-dot" />
+              Session active
+            </div>
+            <Link href="/login" className="text-sm font-bold text-dark hover:text-primary transition-colors">
+              Sign out
+            </Link>
           </div>
-          <div className="text-left hidden md:block">
-            <p className="text-sm font-semibold text-slate-900 leading-none">
-              Admin User
-            </p>
-            <p className="text-[11px] text-slate-500 mt-1">Super Admin</p>
-          </div>
-          <ChevronDown
-            size={16}
-            className="text-slate-400 group-hover:text-slate-600 transition-colors"
-          />
-        </motion.button>
+        )}
       </div>
     </header>
   );

@@ -1,161 +1,223 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import {
   Users,
+  MessageSquare,
+  CheckCircle,
   TrendingUp,
-  CreditCard,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
+  Sparkles,
+  ArrowRight,
+  Bell,
+  PlusCircle,
+  Search,
+  Compass,
 } from "lucide-react";
+import Header from "../../components/header/header";
 
 const stats = [
   {
-    label: "Total Users",
-    value: "12,450",
-    change: "+12.5%",
-    trendingUp: true,
+    label: "Active Requests",
+    value: "12",
+    desc: "Open help requests in the community feed.",
+    icon: MessageSquare,
+  },
+  {
+    label: "Helpers Online",
+    value: "8",
+    desc: "Community members available to assist right now.",
     icon: Users,
-    color: "bg-blue-500",
   },
   {
-    label: "Revenue",
-    value: "$45,200",
-    change: "+8.2%",
-    trendingUp: true,
-    icon: CreditCard,
-    color: "bg-emerald-500",
+    label: "Solved This Week",
+    value: "5",
+    desc: "Problems resolved through fast community action.",
+    icon: CheckCircle,
   },
   {
-    label: "Avg. Session",
-    value: "24m 32s",
-    change: "-3.1%",
-    trendingUp: false,
-    icon: Activity,
-    color: "bg-purple-500",
-  },
-  {
-    label: "Growth",
-    value: "18.4%",
-    change: "+2.4%",
-    trendingUp: true,
+    label: "Trust Score",
+    value: "100%",
+    desc: "Your current reliability rating in the network.",
     icon: TrendingUp,
-    color: "bg-orange-500",
+  },
+];
+
+const recentActivity = [
+  {
+    text: '"Need help" was marked as solved',
+    type: "Status",
+    time: "2 min ago",
+  },
+  {
+    text: "Sara Noor offered help on your portfolio request",
+    type: "Match",
+    time: "15 min ago",
+  },
+  {
+    text: "Your trust score increased after a solved request",
+    type: "Reputation",
+    time: "1 hr ago",
+  },
+  {
+    text: "AI Center detected rising demand for interview prep",
+    type: "Insight",
+    time: "3 hr ago",
+  },
+];
+
+const quickLinks = [
+  {
+    label: "Create Request",
+    href: "/create-request",
+    icon: PlusCircle,
+    desc: "Post a new help request",
+  },
+  {
+    label: "Explore Feed",
+    href: "/explore",
+    icon: Compass,
+    desc: "Browse community requests",
+  },
+  {
+    label: "AI Center",
+    href: "/ai-center",
+    icon: Sparkles,
+    desc: "See platform intelligence",
+  },
+  {
+    label: "Notifications",
+    href: "/notifications",
+    icon: Bell,
+    desc: "Check your updates",
   },
 ];
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">
-          Welcome back, Admin! 👋
-        </h1>
-        <p className="text-slate-500 mt-1">
-          Here&apos;s what&apos;s happening with your projects today.
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Header />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+      <main className="flex-grow container mx-auto px-6 py-12">
+        <div className="flex flex-col gap-12">
+          {/* Welcome Banner */}
           <motion.div
-            key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
+            className="premium-card-dark p-12 relative overflow-hidden"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div
-                className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center text-white shadow-lg shadow-${stat.color.split("-")[1]}-500/20`}
-              >
-                <stat.icon size={24} />
-              </div>
-              <div
-                className={`flex items-center gap-1 text-sm font-medium ${stat.trendingUp ? "text-emerald-500" : "text-red-500"}`}
-              >
-                {stat.change}
-                {stat.trendingUp ? (
-                  <ArrowUpRight size={16} />
-                ) : (
-                  <ArrowDownRight size={16} />
-                )}
-              </div>
-            </div>
-            <p className="text-slate-500 text-sm font-medium">{stat.label}</p>
-            <p className="text-2xl font-bold text-slate-900 mt-1">
-              {stat.value}
+            <div className="absolute top-[-80px] right-[-80px] w-72 h-72 bg-primary/15 blur-[120px] rounded-full" />
+            <div className="absolute bottom-[-60px] left-[-60px] w-48 h-48 bg-primary/10 blur-[80px] rounded-full" />
+            <span className="section-label text-primary">Dashboard</span>
+            <h1 className="text-5xl font-bold mb-4 max-w-3xl">
+              Welcome back, Ayesha.
+            </h1>
+            <p className="text-white/60 font-medium text-lg max-w-2xl">
+              Here&apos;s what&apos;s happening across your community network
+              today. Track your impact, check matches, and keep the momentum
+              going.
             </p>
           </motion.div>
-        ))}
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-900">
-              Recent Transactions
-            </h2>
-            <button className="text-indigo-600 text-sm font-semibold hover:underline">
-              View All
-            </button>
-          </div>
-          <div className="space-y-6">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer group"
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, i) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="premium-card"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-400 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">
-                      Payment from Client #{i}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      April {10 + i}, 2026 • 2:3{i} PM
-                    </p>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <stat.icon size={20} className="text-primary" />
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-slate-900">+$250.00</p>
-                  <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-wider">
-                    Completed
-                  </p>
+                <span className="section-label text-text-muted">
+                  {stat.label}
+                </span>
+                <div className="text-3xl font-bold text-dark mt-1 mb-2">
+                  {stat.value}
                 </div>
-              </div>
+                <p className="text-xs text-text-muted leading-relaxed">
+                  {stat.desc}
+                </p>
+              </motion.div>
             ))}
           </div>
-        </div>
 
-        {/* Upgrade Card */}
-        <div className="bg-indigo-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-indigo-500/20 flex flex-col justify-between">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/20 rounded-full -ml-12 -mb-12 blur-2xl" />
-
-          <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center mb-6">
-              <TrendingUp size={24} />
+          <div className="grid lg:grid-cols-5 gap-8">
+            {/* Recent Activity */}
+            <div className="lg:col-span-3">
+              <div className="premium-card h-full">
+                <span className="section-label text-primary">
+                  Recent Activity
+                </span>
+                <h2 className="text-3xl font-bold text-dark mb-8">
+                  Latest updates
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {recentActivity.map((item, i) => (
+                    <div
+                      key={i}
+                      className="p-5 rounded-2xl bg-bg-card hover:bg-white hover:shadow-md transition-all cursor-pointer group flex items-center justify-between"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-dark group-hover:text-primary transition-colors">
+                          {item.text}
+                        </span>
+                        <span className="text-text-muted text-xs">
+                          {item.type} • {item.time}
+                        </span>
+                      </div>
+                      <ArrowRight
+                        size={16}
+                        className="text-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
-            <p className="text-indigo-100 text-sm leading-relaxed opacity-80">
-              Get access to advanced analytics, unlimited team members, and
-              custom branding.
-            </p>
-          </div>
 
-          <button className="relative z-10 mt-8 bg-white text-indigo-600 font-bold py-3 rounded-xl hover:bg-indigo-50 transition-all active:scale-[0.98]">
-            Get Started Now
-          </button>
+            {/* Quick Links */}
+            <div className="lg:col-span-2">
+              <div className="premium-card-muted h-full">
+                <span className="section-label text-primary">Quick Access</span>
+                <h2 className="text-3xl font-bold text-dark mb-8">
+                  Jump to action
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {quickLinks.map((link, i) => (
+                    <Link
+                      key={i}
+                      href={link.href}
+                      className="p-5 rounded-2xl bg-white hover:shadow-md transition-all cursor-pointer group flex items-center gap-4"
+                    >
+                      <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                        <link.icon size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-grow">
+                        <span className="font-bold text-dark text-sm group-hover:text-primary transition-colors block">
+                          {link.label}
+                        </span>
+                        <span className="text-text-muted text-xs">
+                          {link.desc}
+                        </span>
+                      </div>
+                      <ArrowRight
+                        size={16}
+                        className="text-text-muted opacity-0 group-hover:opacity-100 transition-all"
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

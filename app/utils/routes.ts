@@ -12,9 +12,16 @@ const publicRoutes = [
   "/forgotPassword",
 ];
 
-/**
- * Protected routes requiring authentication
- * Note: Dynamic routes like /organization/[id] are handled via regex in PathChecker
- */ const protectedRoutes = ["/dashboard"];
+const protectedRoutes = [
+  "/dashboard", 
+  "/profile", 
+  "/messages", 
+  "/ai-center",
+  "/leaderboard",
+  "/notifications",
+  "/create-request",
+  "/explore",
+  "/requests"
+];
 
 export { publicRoutes, protectedRoutes };

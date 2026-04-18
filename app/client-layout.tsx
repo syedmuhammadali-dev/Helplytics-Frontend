@@ -3,8 +3,6 @@
 import React, { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import Sidebar from "./components/sidebar/sidebar";
-import Header from "./components/header/header";
 import { protectedRoutes } from "./utils/routes";
 
 interface ClientLayoutProps {
@@ -22,27 +20,19 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
-  if (!isProtectedRoute) {
-    return <>{children}</>;
-  }
-
+  // Even for non-protected routes, we might want the same base layout
+  // But for now, let's keep it simple as per original logic but without sidebar
   return (
-    <main>
-      <div className="flex h-screen bg-slate-50 text-slate-900 overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              {children}
-            </motion.div>
-          </main>
-        </div>
-      </div>
+    <main className="min-h-screen flex flex-col">
+      <motion.div
+        key={pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+        className="flex-1 flex flex-col"
+      >
+        {children}
+      </motion.div>
     </main>
   );
 };
