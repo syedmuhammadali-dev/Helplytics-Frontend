@@ -1,14 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  Bell,
-  CheckCircle,
-  MessageSquare,
-  PlusCircle,
-  TrendingUp,
-  Sparkles,
-} from "lucide-react";
 import Header from "../../components/header/header";
 
 const notifications = [

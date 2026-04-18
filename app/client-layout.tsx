@@ -3,7 +3,6 @@
 import React, { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { protectedRoutes } from "./utils/routes";
 
 interface ClientLayoutProps {
   children: ReactNode;
@@ -16,12 +15,6 @@ const ClientLayout = ({ children }: ClientLayoutProps) => {
     return <>{children}</>;
   }
 
-  const isProtectedRoute = protectedRoutes.some(
-    (route) => pathname === route || pathname.startsWith(`${route}/`),
-  );
-
-  // Even for non-protected routes, we might want the same base layout
-  // But for now, let's keep it simple as per original logic but without sidebar
   return (
     <main className="min-h-screen flex flex-col">
       <motion.div

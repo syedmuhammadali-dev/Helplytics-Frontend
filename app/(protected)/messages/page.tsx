@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Send, Search, ChevronDown, User, MessageCircle } from "lucide-react";
+import { Send, ChevronDown } from "lucide-react";
 import Header from "../../components/header/header";
 
 const messages = [

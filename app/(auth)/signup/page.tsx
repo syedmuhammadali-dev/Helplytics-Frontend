@@ -1,212 +1,268 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
-import { setCookie } from "cookies-next";
-import Header from "../../components/header/header";
 
-const AUTH_TOKEN_KEY = "auth_token";
-const COOKIE_OPTIONS = {
-  path: "/",
-  sameSite: "strict" as const,
-  maxAge: 60 * 60 * 24 * 7,
+import Header from "../../components/header/header";
+import {
+  startDemoSession,
+  validateSignupForm,
+  type SignupValues,
+  type ValidationErrors,
+} from "../../utils/auth-session";
+import { type DemoRole } from "../../utils/mock-community";
+
+const initialValues: SignupValues = {
+  name: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  role: "Both",
 };
 
 export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("Both");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const router = useRouter();
+  const [values, setValues] = useState<SignupValues>(initialValues);
+  const [errors, setErrors] = useState<ValidationErrors<keyof SignupValues>>(
+    {},
+  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+  const updateField = <T extends keyof SignupValues>(
+    field: T,
+    value: SignupValues[T],
+  ) => {
+    setValues((currentValues) => ({ ...currentValues, [field]: value }));
+    setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
+  };
 
-    if (!name || !email || !password) {
-      setError("All fields are required.");
-      setIsLoading(false);
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextErrors = validateSignupForm(values);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
       return;
     }
 
-    // Mock signup
-    setTimeout(() => {
-      setCookie(AUTH_TOKEN_KEY, "mock_token_123", COOKIE_OPTIONS);
+    setIsLoading(true);
+
+    window.setTimeout(() => {
+      startDemoSession({
+        name: values.name.trim(),
+        email: values.email.trim(),
+        role: values.role,
+      });
       router.push("/dashboard");
-    }, 1200);
+      router.refresh();
+    }, 700);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="site-shell">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12 flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="grid lg:grid-cols-2 gap-0 w-full max-w-6xl rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/10"
-        >
-          {/* Left Panel */}
-          <div className="bg-dark p-12 lg:p-16 flex flex-col justify-center gap-8 text-white relative overflow-hidden">
-            <div className="absolute inset-0 z-0 opacity-20">
-              <img src="/assets/auth-banner.png" alt="Auth background" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute top-[-100px] left-[-100px] w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
-            <div className="absolute bottom-[-80px] right-[-80px] w-48 h-48 bg-primary/10 blur-[80px] rounded-full" />
+      <main className="container auth-layout">
+        <div className="auth-wrap">
+          <section className="auth-side">
+            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-16 right-0 h-56 w-56 rounded-full bg-amber-400/20 blur-3xl" />
 
-            <div className="relative z-10">
-              <span className="section-label text-primary">
-                Join the Network
-              </span>
-              <h1 className="text-5xl font-bold leading-tight mb-6">
-                Become part of
-                <br />
-                something real.
-              </h1>
-              <p className="text-white/60 leading-relaxed mb-8">
-                Create your community identity, choose your role, and start
-                making meaningful connections with students, mentors, and
-                builders across the platform.
-              </p>
+            <p className="eyebrow">Join the Network</p>
+            <h1>Become part of something real.</h1>
+            <p>
+              Create your community identity, choose your role, and land inside
+              the same polished HelpHub interface used across the product.
+            </p>
 
-              <ul className="flex flex-col gap-4 text-sm text-white/80">
-                {[
-                  "Choose to give help, get help, or do both",
-                  "Build your trust score and earn community badges",
-                  "Get AI-powered matches for your requests",
-                  "Track your contribution impact over time",
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+            <ul>
+              <li>Choose to give help, get help, or do both.</li>
+              <li>Build a trust score with community-first product flows.</li>
+              <li>Start with clean validation instead of loose demo forms.</li>
+            </ul>
+          </section>
 
-          {/* Right Panel */}
-          <div className="bg-bg-card p-12 lg:p-16 flex flex-col gap-6">
-            <div>
-              <span className="section-label text-primary">Create Account</span>
-              <h2 className="text-4xl font-bold text-dark mb-2 leading-tight">
-                Set up your
-                <br />
-                community profile
-              </h2>
-            </div>
+          <section className="auth-card">
+            <p className="eyebrow">Create Account</p>
+            <h2>Set up your community profile</h2>
+            <p className="helper-copy">
+              Signup now validates all required fields, email format, password
+              strength, and password confirmation before creating a session.
+            </p>
 
-            <form onSubmit={handleSignup} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your full name"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="form-input"
-                  required
-                />
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">
-                  Password
-                </label>
-                <div className="relative">
+            <form onSubmit={handleSubmit} className="stack">
+              <div className="auth-grid">
+                <div className="field">
+                  <label htmlFor="name">Full name</label>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Create a strong password"
-                    className="form-input pr-12"
-                    required
+                    id="name"
+                    type="text"
+                    value={values.name}
+                    onChange={(event) =>
+                      updateField("name", event.target.value)
+                    }
+                    className={errors.name ? "input-error" : undefined}
+                    placeholder="Enter your full name"
+                    autoComplete="name"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-dark transition-colors"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
+                  {errors.name ? (
+                    <span className="error-text">{errors.name}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      Use the same name you want to appear on the dashboard.
+                    </span>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="email">Email address</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={values.email}
+                    onChange={(event) =>
+                      updateField("email", event.target.value)
+                    }
+                    className={errors.email ? "input-error" : undefined}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  {errors.email ? (
+                    <span className="error-text">{errors.email}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      A valid email is required before signup completes.
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">
-                  Role
-                </label>
+              <div className="field">
+                <label htmlFor="signup-role">Role</label>
                 <div className="relative">
                   <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="form-select"
+                    id="signup-role"
+                    value={values.role}
+                    onChange={(event) =>
+                      updateField("role", event.target.value as DemoRole)
+                    }
+                    className={`form-select ${errors.role ? "input-error" : ""}`}
                   >
-                    <option>Both</option>
-                    <option>Need Help</option>
-                    <option>Can Help</option>
+                    <option value="Both">Both</option>
+                    <option value="Need Help">Need Help</option>
+                    <option value="Can Help">Can Help</option>
                   </select>
                   <ChevronDown
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-dark/40 pointer-events-none"
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
                     size={18}
                   />
                 </div>
+                {errors.role ? (
+                  <span className="error-text">{errors.role}</span>
+                ) : (
+                  <span className="helper-copy">
+                    Pick the mode that best fits how you want to use the
+                    platform.
+                  </span>
+                )}
               </div>
 
-              {error && (
-                <motion.p
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-tag-red-text text-sm font-medium bg-tag-red-bg py-2.5 px-4 rounded-xl"
-                >
-                  {error}
-                </motion.p>
-              )}
+              <div className="auth-grid">
+                <div className="field">
+                  <label htmlFor="password">Password</label>
+                  <div className="relative">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={values.password}
+                      onChange={(event) =>
+                        updateField("password", event.target.value)
+                      }
+                      className={
+                        errors.password ? "input-error pr-12" : "pr-12"
+                      }
+                      placeholder="Create a strong password"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {errors.password ? (
+                    <span className="error-text">{errors.password}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      Minimum 8 characters with upper, lower, and number.
+                    </span>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="confirm-password">Confirm password</label>
+                  <div className="relative">
+                    <input
+                      id="confirm-password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={values.confirmPassword}
+                      onChange={(event) =>
+                        updateField("confirmPassword", event.target.value)
+                      }
+                      className={
+                        errors.confirmPassword ? "input-error pr-12" : "pr-12"
+                      }
+                      placeholder="Repeat your password"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword((current) => !current)
+                      }
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={18} />
+                      ) : (
+                        <Eye size={18} />
+                      )}
+                    </button>
+                  </div>
+                  {errors.confirmPassword ? (
+                    <span className="error-text">{errors.confirmPassword}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      Confirmation must match the password exactly.
+                    </span>
+                  )}
+                </div>
+              </div>
 
               <button
                 type="submit"
+                className="btn btn-primary"
                 disabled={isLoading}
-                className="btn-primary w-full py-4 text-base mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Creating account..." : "Create account"}
               </button>
             </form>
 
-            <p className="text-text-muted text-sm text-center mt-2">
+            <p className="helper-copy">
               Already have an account?{" "}
-              <Link
-                href="/login"
-                className="text-primary font-bold hover:underline"
-              >
+              <Link href="/login" className="font-bold text-primary">
                 Sign in
               </Link>
             </p>
-          </div>
-        </motion.div>
+          </section>
+        </div>
       </main>
     </div>
   );

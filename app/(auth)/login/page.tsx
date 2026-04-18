@@ -1,164 +1,241 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { ChevronDown, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { setCookie } from "cookies-next";
-import Header from "../../components/header/header";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { ChevronDown, Eye, EyeOff } from "lucide-react";
 
-const AUTH_TOKEN_KEY = "auth_token";
-const COOKIE_OPTIONS = {
-  path: "/",
-  sameSite: "strict" as const,
-  maxAge: 60 * 60 * 24 * 7,
-};
+import Header from "../../components/header/header";
+import {
+  startDemoSession,
+  validateLoginForm,
+  type LoginValues,
+  type ValidationErrors,
+} from "../../utils/auth-session";
+import { demoUsers, type DemoRole } from "../../utils/mock-community";
+
+const DEFAULT_PASSWORD = "DemoPass123";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("community@helphub.ai");
-  const [password, setPassword] = useState("••••••••");
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("Both");
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [selectedUserId, setSelectedUserId] = useState(demoUsers[0].id);
+  const [values, setValues] = useState<LoginValues>({
+    email: demoUsers[0].email,
+    password: DEFAULT_PASSWORD,
+    role: demoUsers[0].role,
+  });
+  const [errors, setErrors] = useState<ValidationErrors<keyof LoginValues>>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const selectedUser =
+    demoUsers.find((user) => user.id === selectedUserId) ?? demoUsers[0];
+
+  const handleUserChange = (userId: string) => {
+    const nextUser =
+      demoUsers.find((user) => user.id === userId) ?? demoUsers[0];
+
+    setSelectedUserId(userId);
+    setValues((currentValues) => ({
+      ...currentValues,
+      email: nextUser.email,
+      role: nextUser.role,
+    }));
+    setErrors({});
+  };
+
+  const updateField = <T extends keyof LoginValues>(
+    field: T,
+    value: LoginValues[T],
+  ) => {
+    setValues((currentValues) => ({ ...currentValues, [field]: value }));
+    setErrors((currentErrors) => ({ ...currentErrors, [field]: undefined }));
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const nextErrors = validateLoginForm(values);
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
     setIsLoading(true);
-    
-    // Mock login
-    setTimeout(() => {
-      setCookie(AUTH_TOKEN_KEY, "mock_token_123", COOKIE_OPTIONS);
-      router.push("/profile");
-    }, 1000);
+
+    window.setTimeout(() => {
+      startDemoSession({
+        name: selectedUser.name,
+        email: values.email.trim(),
+        role: values.role,
+      });
+      router.push("/dashboard");
+      router.refresh();
+    }, 600);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="site-shell">
       <Header />
-      
-      <main className="flex-grow container mx-auto px-6 py-12 flex items-center justify-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="grid lg:grid-cols-2 gap-0 w-full max-w-6xl rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black/10"
-        >
-          
-          {/* Left Panel */}
-          <div className="bg-dark p-12 lg:p-16 flex flex-col justify-center gap-8 text-white relative overflow-hidden">
-            <div className="absolute inset-0 z-0 opacity-20">
-              <img src="/assets/auth-banner.png" alt="Auth background" className="w-full h-full object-cover" />
-            </div>
-            <div className="absolute top-[-100px] left-[-100px] w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
-            
-            <div className="relative z-10">
-              <span className="section-label text-primary">Community Access</span>
-              <h1 className="text-5xl font-bold leading-tight mb-6">
-                Enter the support<br />network.
-              </h1>
-              <p className="text-white/60 leading-relaxed mb-8">
-                Choose a demo identity, set your role, and jump into a multi-page product flow designed for asking, 
-                offering, and tracking help with a premium interface.
-              </p>
 
-              <ul className="flex flex-col gap-4 text-sm text-white/80">
-                {[
-                  "Role-based entry for Need Help, Can Help, or Both",
-                  "Direct path into dashboard, requests, AI Center, and community feed",
-                  "Persistent demo session powered by community trust"
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 shrink-0" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+      <main className="container auth-layout">
+        <div className="auth-wrap">
+          <section className="auth-side">
+            <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+            <div className="absolute -bottom-16 right-0 h-56 w-56 rounded-full bg-amber-400/20 blur-3xl" />
 
-          {/* Right Panel */}
-          <div className="bg-bg-card p-12 lg:p-16 flex flex-col gap-8">
-            <div>
-              <span className="section-label text-primary">Login / Signup</span>
-              <h2 className="text-4xl font-bold text-dark mb-4 leading-tight">
-                Authenticate your<br />community profile
-              </h2>
-            </div>
+            <p className="eyebrow">Community Access</p>
+            <h1>Enter the support network.</h1>
+            <p>
+              Choose a demo identity, set your role, and jump into the same
+              premium dashboard flow shown in the reference design.
+            </p>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">Select demo user</label>
+            <ul>
+              <li>Role-based entry for Need Help, Can Help, or Both.</li>
+              <li>
+                Direct path into dashboard, requests, AI Center, and feed.
+              </li>
+              <li>Persistent demo session with a polished auth experience.</li>
+            </ul>
+          </section>
+
+          <section className="auth-card">
+            <p className="eyebrow">Login</p>
+            <h2>Authenticate your community profile</h2>
+            <p className="helper-copy">
+              Use one of the seeded demo accounts below. Validation is now
+              enforced before entering the dashboard.
+            </p>
+
+            <form onSubmit={handleSubmit} className="stack">
+              <div className="field">
+                <label htmlFor="demo-user">Select demo user</label>
                 <div className="relative">
-                  <select className="form-select">
-                    <option>Ayesha Khan</option>
-                    <option>Sara Noor</option>
-                    <option>Hassan Ali</option>
-                  </select>
-                  <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-dark/40 pointer-events-none" size={18} />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">Role selection</label>
-                <div className="relative">
-                  <select 
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
+                  <select
+                    id="demo-user"
+                    value={selectedUserId}
+                    onChange={(event) => handleUserChange(event.target.value)}
                     className="form-select"
                   >
-                    <option>Both</option>
-                    <option>Need Help</option>
-                    <option>Can Help</option>
+                    {demoUsers.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                      </option>
+                    ))}
                   </select>
-                  <ChevronDown className="absolute right-6 top-1/2 -translate-y-1/2 text-dark/40 pointer-events-none" size={18} />
+                  <ChevronDown
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
+                    size={18}
+                  />
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">Email</label>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="form-input"
+              <div className="field">
+                <label htmlFor="role">Role selection</label>
+                <div className="relative">
+                  <select
+                    id="role"
+                    value={values.role}
+                    onChange={(event) =>
+                      updateField("role", event.target.value as DemoRole)
+                    }
+                    className={`form-select ${errors.role ? "input-error" : ""}`}
+                  >
+                    <option value="Both">Both</option>
+                    <option value="Need Help">Need Help</option>
+                    <option value="Can Help">Can Help</option>
+                  </select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
+                    size={18}
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-dark/60 uppercase tracking-wide">Password</label>
+                {errors.role ? (
+                  <span className="error-text">{errors.role}</span>
+                ) : (
+                  <span className="helper-copy">
+                    Recommended role for {selectedUser.name}:{" "}
+                    {selectedUser.role}
+                  </span>
+                )}
+              </div>
+
+              <div className="auth-grid">
+                <div className="field">
+                  <label htmlFor="email">Email</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={values.email}
+                    onChange={(event) =>
+                      updateField("email", event.target.value)
+                    }
+                    className={errors.email ? "input-error" : undefined}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                  />
+                  {errors.email ? (
+                    <span className="error-text">{errors.email}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      You can keep the demo email or replace it with your own.
+                    </span>
+                  )}
+                </div>
+
+                <div className="field">
+                  <label htmlFor="password">Password</label>
                   <div className="relative">
-                    <input 
+                    <input
+                      id="password"
                       type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="form-input pr-12"
+                      value={values.password}
+                      onChange={(event) =>
+                        updateField("password", event.target.value)
+                      }
+                      className={
+                        errors.password ? "input-error pr-12" : "pr-12"
+                      }
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
                     />
-                    <button 
+                    <button
                       type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted hover:text-dark transition-colors"
+                      onClick={() => setShowPassword((current) => !current)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
+                  {errors.password ? (
+                    <span className="error-text">{errors.password}</span>
+                  ) : (
+                    <span className="helper-copy">
+                      Demo password: <strong>{DEFAULT_PASSWORD}</strong>
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <button type="submit" className="btn-primary w-full py-4 text-base mt-4">
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isLoading}
+              >
                 {isLoading ? "Authenticating..." : "Continue to dashboard"}
               </button>
             </form>
 
-            <p className="text-text-muted text-sm text-center">
-              Don't have an account?{" "}
-              <Link href="/signup" className="text-primary font-bold hover:underline">
+            <p className="helper-copy">
+              Don&apos;t have an account yet?{" "}
+              <Link href="/signup" className="font-bold text-primary">
                 Create one
               </Link>
             </p>
-          </div>
-
-        </motion.div>
+          </section>
+        </div>
       </main>
     </div>
   );

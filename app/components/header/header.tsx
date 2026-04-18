@@ -1,142 +1,96 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { setCookie, deleteCookie } from "cookies-next";
+import { usePathname, useRouter } from "next/navigation";
+
+import { clearDemoSession } from "../../utils/auth-session";
 import { protectedRoutes } from "../../utils/routes";
 
-const getLinks = (pathname: string, isProtected: boolean) => {
-  if (!isProtected) {
-    return [
-      { name: "Home", href: "/" },
-      { name: "Explore", href: "/explore" },
-      { name: "Leaderboard", href: "/leaderboard" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
+const publicLinks = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Explore", href: "/explore" },
+  { label: "Create Request", href: "/create-request" },
+  { label: "Messages", href: "/messages" },
+  { label: "Profile", href: "/profile" },
+];
 
-  if (pathname.includes("/leaderboard")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Leaderboard", href: "/leaderboard" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
-
-  if (pathname.includes("/notifications")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Notifications", href: "/notifications" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
-
-  if (pathname.includes("/create-request")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Create", href: "/create-request" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
-
-  if (pathname.includes("/explore")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Leaderboard", href: "/leaderboard" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
-
-  if (pathname.includes("/ai-center")) {
-    return [
-      { name: "Dashboard", href: "/dashboard" },
-      { name: "Explore", href: "/explore" },
-      { name: "Leaderboard", href: "/leaderboard" },
-      { name: "AI Center", href: "/ai-center" },
-    ];
-  }
-
-  return [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Explore", href: "/explore" },
-    { name: "AI Center", href: "/ai-center" },
-    { name: "Onboarding", href: "/onboarding" },
-    { name: "Profile", href: "/profile" },
-  ];
-};
+const protectedLinks = [
+  { label: "Dashboard", href: "/dashboard" },
+  { label: "Explore", href: "/explore" },
+  { label: "Create Request", href: "/create-request" },
+  { label: "Messages", href: "/messages" },
+  { label: "Profile", href: "/profile" },
+];
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+
   const isProtected = protectedRoutes.some(
     (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 
-  const links = getLinks(pathname, isProtected);
+  const links = isProtected ? protectedLinks : publicLinks;
 
   const handleSignOut = () => {
-    deleteCookie("auth_token");
-    window.location.href = "/login";
+    clearDemoSession();
+    router.push("/login");
+    router.refresh();
   };
 
   return (
-    <header className="glass-header sticky top-0 z-50 px-8 py-4 flex items-center justify-between">
-      <div className="flex items-center gap-12">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-            H
-          </div>
-          <span className="font-bold text-xl tracking-tight text-dark">
-            HelpHub AI
-          </span>
+    <header className="topbar">
+      <div className="container nav">
+        <Link href="/" className="brand">
+          <span className="brand-badge">H</span>
+          <span>HelpHub AI</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {links.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                pathname === link.href
-                  ? "bg-bg-card text-dark shadow-sm"
-                  : "text-text-muted hover:text-dark hover:bg-black/5"
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
-        </nav>
-      </div>
+        <nav className="nav-links">
+          {links.map((link) => {
+            const isActive =
+              pathname === link.href || pathname.startsWith(`${link.href}/`);
 
-      <div className="flex items-center gap-6">
-        {!isProtected ? (
-          <>
-            <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              <span className="notif-dot" />
-              Live community signals
-            </div>
-            <Link href="/login" className="btn-primary text-xs px-6 py-2.5">
-              Join the platform
-            </Link>
-          </>
-        ) : (
-          <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-text-muted">
-              <span className="notif-dot" />
-              Session active
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="text-sm font-bold text-dark hover:text-primary transition-colors cursor-pointer"
-            >
-              Sign out
-            </button>
-          </div>
-        )}
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={isActive ? "active" : undefined}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="nav-actions">
+          {isProtected ? (
+            <>
+              <Link href="/notifications" className="pill">
+                Notifications
+              </Link>
+              <Link href="/ai-center" className="btn btn-primary">
+                Open AI Center
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="btn btn-secondary"
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/leaderboard" className="pill">
+                Leaderboard
+              </Link>
+              <Link href="/login" className="btn btn-primary">
+                Join the platform
+              </Link>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );

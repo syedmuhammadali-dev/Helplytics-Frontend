@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, ChevronDown, Filter, SlidersHorizontal } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Header from "../../components/header/header";
 import Link from "next/link";
 

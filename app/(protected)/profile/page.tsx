@@ -1,14 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  ShieldCheck,
-  Award,
-  MapPin,
-  Briefcase,
-  Heart,
-  Save,
-} from "lucide-react";
+import { Save } from "lucide-react";
 import Header from "../../components/header/header";
 
 export default function ProfilePage() {

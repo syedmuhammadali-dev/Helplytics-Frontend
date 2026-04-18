@@ -1,15 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  ArrowUpRight,
   Users,
   MessageSquare,
   CheckCircle,
   Sparkles,
   TrendingUp,
-  Zap,
   ShieldCheck,
 } from "lucide-react";
 import Header from "./components/header/header";
@@ -34,7 +33,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-grow container mx-auto px-6 py-12">
+      <main className="grow container mx-auto px-6 py-12">
         {/* Hero Section */}
         <section className="grid lg:grid-cols-2 gap-12 items-start mb-24">
           <motion.div
@@ -128,13 +127,16 @@ export default function Home() {
             className="premium-card-dark p-10 flex flex-col gap-8 relative overflow-hidden"
           >
             <div className="absolute inset-0 z-0 opacity-10">
-              <img
+              <Image
                 src="/assets/hero-abstract.png"
                 alt="Hero background"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                loading="eager"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="absolute top-[-100px] right-[-100px] w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
+            <div className="absolute -top-25 -right-25 w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
 
             <div className="relative z-10">
               <span className="section-label text-primary">

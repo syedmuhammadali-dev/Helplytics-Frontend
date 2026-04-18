@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Award, TrendingUp, Users, Star, ShieldCheck } from "lucide-react";
 import Header from "../../components/header/header";
 
 const rankings = [

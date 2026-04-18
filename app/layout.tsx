@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
 import "./globals.css";
 import ClientLayout from "./client-layout";
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-});
 
 export const metadata: Metadata = {
   title: "HelpHub AI | Find help faster. Become help that matters.",
@@ -20,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${outfit.variable} h-full`}>
-      <body className="min-h-full flex flex-col font-outfit anFtialiased">
+    <html lang="en" className="h-full" data-scroll-behavior="smooth">
+      <body className="min-h-full flex flex-col antialiased">
         <div className="bg-gradient-blur" />
         <ClientLayout>{children}</ClientLayout>
       </body>
