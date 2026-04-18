@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
 import {
@@ -13,6 +14,7 @@ import {
   type ValidationErrors,
 } from "../../utils/auth-session";
 import { type DemoRole } from "../../utils/mock-community";
+import { createUser, useCommunityStore } from "../../utils/community-store";
 
 const initialValues: SignupValues = {
   name: "",
@@ -24,6 +26,7 @@ const initialValues: SignupValues = {
 
 export default function SignupPage() {
   const router = useRouter();
+  const state = useCommunityStore();
   const [values, setValues] = useState<SignupValues>(initialValues);
   const [errors, setErrors] = useState<ValidationErrors<keyof SignupValues>>(
     {},
@@ -47,17 +50,38 @@ export default function SignupPage() {
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
+      toast.error("Please complete the signup form correctly.");
+      return;
+    }
+
+    if (
+      state.users.some(
+        (user) => user.email.toLowerCase() === values.email.trim().toLowerCase(),
+      )
+    ) {
+      setErrors((current) => ({
+        ...current,
+        email: "An account with this email already exists.",
+      }));
+      toast.error("This email is already registered.");
       return;
     }
 
     setIsLoading(true);
 
     window.setTimeout(() => {
-      startDemoSession({
+      const newUser = createUser({
         name: values.name.trim(),
         email: values.email.trim(),
         role: values.role,
       });
+
+      startDemoSession({
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+      });
+      toast.success("Account created. Welcome to HelpLytics.");
       router.push("/dashboard");
       router.refresh();
     }, 700);

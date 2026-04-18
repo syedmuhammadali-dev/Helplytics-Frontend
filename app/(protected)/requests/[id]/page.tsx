@@ -2,23 +2,47 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { toast } from "react-toastify";
 
 import Header from "../../../components/header/header";
+import { readDemoSession } from "../../../utils/auth-session";
 import {
-  communityRequests,
-  demoUsers,
-  getUserById,
-} from "../../../utils/mock-community";
+  addHelperToRequest,
+  getCurrentCommunityUser,
+  markRequestSolved,
+  useCommunityStore,
+} from "../../../utils/community-store";
 
 export default function RequestDetailPage() {
   const params = useParams<{ id: string }>();
+  const session = readDemoSession();
+  const state = useCommunityStore();
+  const currentUser = getCurrentCommunityUser(state, session);
   const request =
-    communityRequests.find((item) => item.id === params.id) ??
-    communityRequests[0];
-  const requester = getUserById(request.requesterId);
-  const helpers = demoUsers.filter((user) =>
-    request.helperIds.includes(user.id),
-  );
+    state.requests.find((item) => item.id === params.id) ?? state.requests[0];
+  const requester = state.users.find((user) => user.id === request.requesterId);
+  const helpers = state.users.filter((user) => request.helperIds.includes(user.id));
+
+  const handleHelp = () => {
+    const wasAdded = addHelperToRequest(request.id, currentUser.id);
+
+    if (!wasAdded) {
+      toast.info("You are already listed as a helper on this request.");
+      return;
+    }
+
+    toast.success("You have been added to the helper pool.");
+  };
+
+  const handleSolved = () => {
+    if (request.status === "Solved") {
+      toast.info("This request is already marked as solved.");
+      return;
+    }
+
+    markRequestSolved(request.id, currentUser.id);
+    toast.success("Request marked as solved.");
+  };
 
   return (
     <div className="site-shell">
@@ -73,10 +97,14 @@ export default function RequestDetailPage() {
               <p className="section-kicker">Community actions</p>
               <h3>Support or close the request</h3>
               <div className="row">
-                <button type="button" className="btn btn-primary">
+                <button type="button" className="btn btn-primary" onClick={handleHelp}>
                   I can help
                 </button>
-                <button type="button" className="btn btn-secondary">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleSolved}
+                >
                   Mark as solved
                 </button>
               </div>
@@ -89,10 +117,10 @@ export default function RequestDetailPage() {
               <div className="user-line">
                 <div className="avatar teal">
                   {requester?.name
-                    .split(" ")
+                    ?.split(" ")
                     .map((part) => part[0])
                     .join("")
-                    .slice(0, 2)}
+                    .slice(0, 2) ?? "UN"}
                 </div>
                 <div>
                   <strong>{requester?.name ?? "Unknown user"}</strong>
@@ -110,9 +138,7 @@ export default function RequestDetailPage() {
                 {helpers.map((helper, index) => (
                   <div key={helper.id} className="helper-item">
                     <div className="user-line">
-                      <div
-                        className={`avatar ${index === 0 ? "teal" : "dark"}`}
-                      >
+                      <div className={`avatar ${index === 0 ? "teal" : "dark"}`}>
                         {helper.name
                           .split(" ")
                           .map((part) => part[0])

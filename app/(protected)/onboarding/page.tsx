@@ -1,23 +1,78 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
-import {
-  ChevronRight,
-  User,
-  MapPin,
-  Sparkles,
-  CheckCircle2,
-} from "lucide-react";
-import Header from "../../components/header/header";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import { ChevronRight, User, MapPin, Sparkles, CheckCircle2 } from "lucide-react";
+import { toast } from "react-toastify";
+
+import Header from "../../components/header/header";
+import { readDemoSession } from "../../utils/auth-session";
+import {
+  getCurrentCommunityUser,
+  updateCurrentUserProfile,
+  useCommunityStore,
+} from "../../utils/community-store";
+
+const suggestedSkills = [
+  "React",
+  "Node.js",
+  "Figma",
+  "UI/UX",
+  "Python",
+  "Data Science",
+  "AWS",
+  "DevOps",
+  "Next.js",
+  "Tailwind",
+];
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const session = readDemoSession();
+  const state = useCommunityStore();
+  const currentUser = getCurrentCommunityUser(state, session);
+  const [name, setName] = useState(currentUser.name);
+  const [location, setLocation] = useState(currentUser.location);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>(
+    currentUser.skills.length ? currentUser.skills : ["React", "Figma"],
+  );
 
-  const nextStep = () => setStep(step + 1);
-  const finish = () => router.push("/dashboard");
+  const nextStep = () => {
+    if (step === 1 && (!name.trim() || !location.trim())) {
+      toast.error("Please complete your name and location first.");
+      return;
+    }
+
+    if (step === 2 && selectedSkills.length === 0) {
+      toast.error("Select at least one skill before continuing.");
+      return;
+    }
+
+    setStep((current) => current + 1);
+  };
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills((current) =>
+      current.includes(skill)
+        ? current.filter((item) => item !== skill)
+        : [...current, skill],
+    );
+  };
+
+  const finish = () => {
+    updateCurrentUserProfile(session, {
+      name: name.trim(),
+      location: location.trim(),
+      skills: selectedSkills,
+      interests: currentUser.interests.length
+        ? currentUser.interests
+        : ["Community Growth", "Peer Learning"],
+    });
+    toast.success("Onboarding saved. Dashboard ready.");
+    router.push("/dashboard");
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -25,17 +80,12 @@ export default function OnboardingPage() {
 
       <main className="flex-grow container mx-auto px-6 py-12 flex items-center justify-center">
         <div className="w-full max-w-4xl flex flex-col gap-12">
-          {/* Progress Indicator */}
           <div className="flex items-center justify-center gap-4">
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
                 className={`h-1.5 rounded-full transition-all duration-500 ${
-                  s === step
-                    ? "w-12 bg-primary"
-                    : s < step
-                      ? "w-8 bg-primary/40"
-                      : "w-8 bg-black/5"
+                  s === step ? "w-12 bg-primary" : s < step ? "w-8 bg-primary/40" : "w-8 bg-black/5"
                 }`}
               />
             ))}
@@ -45,10 +95,9 @@ export default function OnboardingPage() {
             key={step}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
             className="premium-card p-12 lg:p-16 bg-white shadow-2xl shadow-black/5"
-          > 
-            {step === 1 && (
+          >
+            {step === 1 ? (
               <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-4">
                   <span className="section-label text-primary">
@@ -74,6 +123,8 @@ export default function OnboardingPage() {
                       <input
                         type="text"
                         className="form-input pl-12"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
                         placeholder="e.g. Ayesha Khan"
                       />
                       <User
@@ -90,6 +141,8 @@ export default function OnboardingPage() {
                       <input
                         type="text"
                         className="form-input pl-12"
+                        value={location}
+                        onChange={(event) => setLocation(event.target.value)}
                         placeholder="e.g. Karachi, PK"
                       />
                       <MapPin
@@ -111,9 +164,9 @@ export default function OnboardingPage() {
                   />
                 </button>
               </div>
-            )}
+            ) : null}
 
-            {step === 2 && (
+            {step === 2 ? (
               <div className="flex flex-col gap-10">
                 <div className="flex flex-col gap-4">
                   <span className="section-label text-primary">
@@ -131,35 +184,36 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-4">
-                  {[
-                    "React",
-                    "Node.js",
-                    "Figma",
-                    "UI/UX",
-                    "Python",
-                    "Data Science",
-                    "AWS",
-                    "DevOps",
-                    "Next.js",
-                    "Tailwind",
-                  ].map((skill) => (
-                    <button
-                      key={skill}
-                      className="px-6 py-3 rounded-2xl bg-bg-card border border-black/5 font-bold text-dark hover:border-primary/40 hover:bg-white transition-all"
-                    >
-                      {skill}
-                    </button>
-                  ))}
+                  {suggestedSkills.map((skill) => {
+                    const isSelected = selectedSkills.includes(skill);
+
+                    return (
+                      <button
+                        key={skill}
+                        type="button"
+                        onClick={() => toggleSkill(skill)}
+                        className={`px-6 py-3 rounded-2xl border font-bold transition-all ${
+                          isSelected
+                            ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                            : "bg-bg-card border-black/5 text-dark hover:border-primary/40 hover:bg-white"
+                        }`}
+                      >
+                        {skill}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <div className="flex justify-between items-center mt-4">
                   <button
+                    type="button"
                     onClick={() => setStep(1)}
                     className="text-text-muted font-bold hover:text-dark transition-colors"
                   >
                     Back
                   </button>
                   <button
+                    type="button"
                     onClick={nextStep}
                     className="btn-primary py-4 px-12 text-base group"
                   >
@@ -171,9 +225,9 @@ export default function OnboardingPage() {
                   </button>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {step === 3 && (
+            {step === 3 ? (
               <div className="flex flex-col gap-10 text-center items-center">
                 <div className="w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center text-primary mb-4">
                   <Sparkles size={48} />
@@ -200,19 +254,20 @@ export default function OnboardingPage() {
                       Profile optimized
                     </div>
                     <div className="text-text-muted font-medium">
-                      Your trust score is now 100%
+                      {selectedSkills.length} skills selected and synced
                     </div>
                   </div>
                 </div>
 
                 <button
+                  type="button"
                   onClick={finish}
                   className="btn-primary py-5 px-16 text-lg shadow-xl shadow-primary/20"
                 >
                   Go to Dashboard
                 </button>
               </div>
-            )}
+            ) : null}
           </motion.div>
         </div>
       </main>

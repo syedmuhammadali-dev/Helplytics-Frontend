@@ -1,73 +1,50 @@
 "use client";
 
 import { motion } from "framer-motion";
+
 import Header from "../../components/header/header";
-
-const insights = [
-  {
-    label: "Trend Pulse",
-    value: "Web Development",
-    desc: "Most common support area based on active community requests.",
-  },
-  {
-    label: "Urgency Watch",
-    value: "2",
-    desc: "Requests currently flagged high priority by the urgency detector.",
-  },
-  {
-    label: "Mentor Pool",
-    value: "2",
-    desc: "Trusted helpers with strong response history and contribution signals.",
-  },
-];
-
-const recommendations = [
-  {
-    title: "Need help",
-    summary:
-      "AI summary: Web Development request with high urgency. Best suited for members with relevant expertise.",
-    tags: [
-      { label: "Web Development", type: "blue" },
-      { label: "High", type: "red" },
-    ],
-  },
-  {
-    title: "Need help making my portfolio responsive before demo day",
-    summary:
-      "Responsive layout issue with a short deadline. Best helpers are frontend mentors comfortable with CSS grids and media queries.",
-    tags: [
-      { label: "Web Development", type: "blue" },
-      { label: "High", type: "red" },
-    ],
-  },
-  {
-    title: "Looking for Figma feedback on a volunteer event poster",
-    summary:
-      "A visual design critique request where feedback on hierarchy, spacing, and messaging would create the most value.",
-    tags: [
-      { label: "Design", type: "blue" },
-      { label: "Medium", type: "yellow" },
-    ],
-  },
-  {
-    title: "Need mock interview support for internship applications",
-    summary:
-      "Career coaching request focused on confidence-building, behavioral answers, and entry-level frontend interviews.",
-    tags: [
-      { label: "Career", type: "blue" },
-      { label: "Low", type: "teal" },
-    ],
-  },
-];
+import {
+  deriveSkillSuggestions,
+  getCurrentCommunityUser,
+  getTopCategory,
+  useCommunityStore,
+} from "../../utils/community-store";
+import { readDemoSession } from "../../utils/auth-session";
 
 export default function AICenterPage() {
+  const session = readDemoSession();
+  const state = useCommunityStore();
+  const currentUser = getCurrentCommunityUser(state, session);
+  const suggestions = deriveSkillSuggestions(currentUser);
+
+  const insights = [
+    {
+      label: "Trend Pulse",
+      value: getTopCategory(state.requests),
+      desc: "Most common support area based on active community requests.",
+    },
+    {
+      label: "Urgency Watch",
+      value: state.requests.filter(
+        (request) => request.urgency === "High" || request.urgency === "Critical",
+      ).length.toString(),
+      desc: "Requests currently flagged high priority by the urgency detector.",
+    },
+    {
+      label: "Mentor Pool",
+      value: state.users
+        .filter((user) => user.trustScore >= 85)
+        .length.toString(),
+      desc: "Trusted helpers with strong response history and contribution signals.",
+    },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-6 py-12">
         <div className="flex flex-col gap-12">
-          {/* Header Banner */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -84,11 +61,10 @@ export default function AICenterPage() {
             </p>
           </motion.div>
 
-          {/* Pulse Cards */}
           <div className="grid md:grid-cols-3 gap-6">
             {insights.map((item, i) => (
               <motion.div
-                key={i}
+                key={item.label}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.1 }}
@@ -97,9 +73,7 @@ export default function AICenterPage() {
                 <span className="section-label text-text-muted opacity-60">
                   {item.label}
                 </span>
-                <div className="text-3xl font-bold text-dark mb-3">
-                  {item.value}
-                </div>
+                <div className="text-3xl font-bold text-dark mb-3">{item.value}</div>
                 <p className="text-sm text-text-muted leading-relaxed">
                   {item.desc}
                 </p>
@@ -107,33 +81,40 @@ export default function AICenterPage() {
             ))}
           </div>
 
-          {/* AI Recommendations */}
           <div className="premium-card p-12">
-            <span className="section-label text-primary">
-              AI Recommendations
-            </span>
-            <h2 className="text-4xl font-bold text-dark mb-12">
+            <span className="section-label text-primary">AI Recommendations</span>
+            <h2 className="text-4xl font-bold text-dark mb-6">
               Requests needing attention
             </h2>
+            <p className="helper-copy mb-8">
+              Based on your profile, you are strongest in {suggestions.helpWith.join(", ")}.
+            </p>
 
             <div className="flex flex-col gap-4">
-              {recommendations.map((rec, i) => (
+              {state.requests.slice(0, 4).map((request) => (
                 <div
-                  key={i}
+                  key={request.id}
                   className="p-8 rounded-[2rem] bg-bg-card border border-black/5 hover:bg-white hover:shadow-xl transition-all cursor-pointer group"
                 >
                   <h3 className="font-bold text-2xl mb-3 group-hover:text-primary transition-colors">
-                    {rec.title}
+                    {request.title}
                   </h3>
                   <p className="text-text-muted text-sm leading-relaxed mb-6">
-                    {rec.summary}
+                    {request.aiSummary}
                   </p>
                   <div className="flex flex-wrap gap-3">
-                    {rec.tags.map((tag, j) => (
-                      <span key={j} className={`tag tag-${tag.type}`}>
-                        {tag.label}
-                      </span>
-                    ))}
+                    <span className="tag tag-blue">{request.category}</span>
+                    <span
+                      className={`tag ${
+                        request.urgency === "High" || request.urgency === "Critical"
+                          ? "tag-red"
+                          : request.urgency === "Medium"
+                            ? "tag-yellow"
+                            : "tag-teal"
+                      }`}
+                    >
+                      {request.urgency}
+                    </span>
                   </div>
                 </div>
               ))}

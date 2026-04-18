@@ -1,42 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
 
 import Header from "../../components/header/header";
 import { readDemoSession } from "../../utils/auth-session";
 import {
-  communityNotifications,
-  communityRequests,
-  getUserById,
-  getUserByName,
-} from "../../utils/mock-community";
-
-function getTopCategory() {
-  const counts = communityRequests.reduce<Record<string, number>>(
-    (accumulator, request) => {
-      accumulator[request.category] = (accumulator[request.category] ?? 0) + 1;
-      return accumulator;
-    },
-    {},
-  );
-
-  return (
-    Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "Community"
-  );
-}
-
-function getSkillSuggestions(name: string) {
-  const user = getUserByName(name);
-  return user.skills.slice(0, 3).join(", ");
-}
+  deriveSkillSuggestions,
+  getCurrentCommunityUser,
+  getTopCategory,
+  useCommunityStore,
+} from "../../utils/community-store";
 
 export default function DashboardPage() {
   const session = readDemoSession();
-  const currentUser = useMemo(
-    () => getUserByName(session.name),
-    [session.name],
-  );
+  const state = useCommunityStore();
+  const currentUser = getCurrentCommunityUser(state, session);
 
   const dashboardStats = [
     {
@@ -46,20 +24,19 @@ export default function DashboardPage() {
     },
     {
       label: "Helping",
-      value: communityRequests.filter((request) =>
+      value: state.requests.filter((request) =>
         request.helperIds.includes(currentUser.id),
       ).length,
       description: "Requests where you are currently listed as a helper.",
     },
     {
       label: "Open requests",
-      value: communityRequests.filter((request) => request.status === "Open")
-        .length,
+      value: state.requests.filter((request) => request.status === "Open").length,
       description: "Community requests currently active across the feed.",
     },
     {
       label: "AI pulse",
-      value: `${communityRequests.filter((request) => request.category === "Career").length} trends`,
+      value: `${state.requests.filter((request) => request.category === "Career").length} trends`,
       description: "Trend count detected in the latest request activity.",
     },
   ];
@@ -67,7 +44,7 @@ export default function DashboardPage() {
   const aiInsights = [
     {
       label: "Most requested category",
-      value: getTopCategory(),
+      value: getTopCategory(state.requests),
     },
     {
       label: "Your strongest trust driver",
@@ -75,11 +52,11 @@ export default function DashboardPage() {
     },
     {
       label: "AI says you can mentor in",
-      value: getSkillSuggestions(currentUser.name),
+      value: deriveSkillSuggestions(currentUser).helpWith.join(", "),
     },
     {
       label: "Your active requests",
-      value: communityRequests
+      value: state.requests
         .filter((request) => request.requesterId === currentUser.id)
         .length.toString(),
     },
@@ -126,8 +103,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="stack">
-              {communityRequests.map((request) => {
-                const requester = getUserById(request.requesterId);
+              {state.requests.map((request) => {
+                const requester = state.users.find(
+                  (user) => user.id === request.requesterId,
+                );
 
                 return (
                   <article key={request.id} className="request-card">
@@ -198,7 +177,7 @@ export default function DashboardPage() {
               <p className="section-kicker">Notifications</p>
               <h3>Latest updates</h3>
               <div className="notif-list">
-                {communityNotifications.map((notification) => (
+                {state.notifications.slice(0, 4).map((notification) => (
                   <div key={notification.id} className="notif-item">
                     <div>
                       <strong>{notification.title}</strong>

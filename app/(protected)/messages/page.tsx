@@ -1,52 +1,69 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send, ChevronDown } from "lucide-react";
-import Header from "../../components/header/header";
+import { toast } from "react-toastify";
 
-const messages = [
-  {
-    from: "Ayesha Khan",
-    to: "Sara Noor",
-    text: "I checked your portfolio request. Share the breakpoint screenshots and I can suggest fixes.",
-    time: "09:45 AM",
-  },
-  {
-    from: "Hassan Ali",
-    to: "Ayesha Khan",
-    text: "Your event poster concept is solid. I would tighten the CTA and reduce the background texture.",
-    time: "11:10 AM",
-  },
-];
+import Header from "../../components/header/header";
+import { readDemoSession } from "../../utils/auth-session";
+import {
+  getCurrentCommunityUser,
+  sendMessage,
+  useCommunityStore,
+} from "../../utils/community-store";
 
 export default function MessagesPage() {
+  const session = readDemoSession();
+  const state = useCommunityStore();
+  const currentUser = getCurrentCommunityUser(state, session);
+  const [recipient, setRecipient] = useState(
+    state.users.find((user) => user.id !== currentUser.id)?.name ?? "",
+  );
+  const [messageText, setMessageText] = useState("");
+
+  const handleSend = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!recipient || !messageText.trim()) {
+      toast.error("Select a recipient and write a message first.");
+      return;
+    }
+
+    sendMessage({
+      from: currentUser.name,
+      to: recipient,
+      text: messageText.trim(),
+    });
+    setMessageText("");
+    toast.success("Message sent.");
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
       <main className="flex-grow container mx-auto px-6 py-12">
         <div className="flex flex-col gap-12">
-          {/* Header Banner */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="premium-card-dark p-12 relative overflow-hidden"
+            className="premium-card-dark p-8 md:p-12 relative overflow-hidden shadow-2xl"
           >
-            <div className="absolute top-[-80px] right-[-80px] w-72 h-72 bg-primary/15 blur-[120px] rounded-full" />
-            <span className="section-label text-primary">
+            <div className="absolute top-[-80px] right-[-80px] w-96 h-96 bg-primary/20 blur-[120px] rounded-full pointer-events-none" />
+            <span className="section-label !text-primary !mb-6">
               Interaction / Messaging
             </span>
-            <h1 className="text-5xl font-bold mb-4 max-w-3xl">
-              Keep support moving through direct communication.
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 max-w-4xl tracking-tight leading-[1.1]">
+              Keep support moving through <span className="text-teal-400">direct</span> communication.
             </h1>
-            <p className="text-white/60 font-medium text-lg leading-relaxed">
+            <p className="text-white/70 font-medium text-lg md:text-xl leading-relaxed max-w-3xl">
               Basic messaging gives helpers and requesters a clear follow-up
               path once a match happens.
             </p>
           </motion.div>
 
           <div className="grid lg:grid-cols-5 gap-8">
-            {/* Left Column: Recent Messages (3/5) */}
             <div className="lg:col-span-3 flex flex-col gap-6">
               <div className="premium-card h-full">
                 <span className="section-label text-text-muted">
@@ -56,25 +73,35 @@ export default function MessagesPage() {
                   Recent messages
                 </h2>
 
-                <div className="flex flex-col gap-4">
-                  {messages.map((msg, i) => (
+                <div className="flex flex-col gap-6">
+                  {state.messages.map((msg) => (
                     <div
-                      key={i}
-                      className="p-8 rounded-[2rem] bg-bg-card border border-black/5 hover:bg-white hover:shadow-xl transition-all cursor-pointer group"
+                      key={msg.id}
+                      className="p-6 md:p-8 rounded-[1.5rem] bg-white/60 border border-black/5 hover:bg-white hover:shadow-xl transition-all cursor-pointer group hover:border-primary/20"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-dark group-hover:text-primary transition-colors">
-                            {msg.from}
-                          </span>
-                          <span className="text-text-muted">→</span>
-                          <span className="font-bold text-dark">{msg.to}</span>
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="avatar !w-10 !h-10 text-xs">
+                            {msg.from[0]}
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-dark group-hover:text-primary transition-colors">
+                                {msg.from}
+                              </span>
+                              <span className="text-text-muted text-xs">→</span>
+                              <span className="font-bold text-dark text-sm">{msg.to}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-text-muted/60 uppercase tracking-widest">
+                              Direct Message
+                            </span>
+                          </div>
                         </div>
                         <div className="px-4 py-1.5 rounded-full bg-white text-[10px] font-bold text-primary border border-primary/10 shadow-sm">
                           {msg.time}
                         </div>
                       </div>
-                      <p className="text-text-muted text-sm leading-relaxed group-hover:text-dark transition-colors">
+                      <p className="text-text-muted text-[15px] leading-relaxed group-hover:text-dark transition-colors pl-1">
                         {msg.text}
                       </p>
                     </div>
@@ -83,7 +110,6 @@ export default function MessagesPage() {
               </div>
             </div>
 
-            {/* Right Column: Start Conversation (2/5) */}
             <div className="lg:col-span-2 flex flex-col gap-6">
               <div className="premium-card h-full bg-bg-card border-none shadow-none">
                 <span className="section-label text-primary">Send Message</span>
@@ -91,14 +117,22 @@ export default function MessagesPage() {
                   Start a conversation
                 </h2>
 
-                <form className="flex flex-col gap-8">
+                <form className="flex flex-col gap-8" onSubmit={handleSend}>
                   <div className="flex flex-col gap-3">
                     <label className="section-label text-dark/60">To</label>
                     <div className="relative">
-                      <select className="form-select">
-                        <option>Ayesha Khan</option>
-                        <option>Sara Noor</option>
-                        <option>Hassan Ali</option>
+                      <select
+                        className="form-select"
+                        value={recipient}
+                        onChange={(event) => setRecipient(event.target.value)}
+                      >
+                        {state.users
+                          .filter((user) => user.id !== currentUser.id)
+                          .map((user) => (
+                            <option key={user.id} value={user.name}>
+                              {user.name}
+                            </option>
+                          ))}
                       </select>
                       <ChevronDown
                         className="absolute right-6 top-1/2 -translate-y-1/2 text-dark/40 pointer-events-none"
@@ -108,18 +142,18 @@ export default function MessagesPage() {
                   </div>
 
                   <div className="flex flex-col gap-3">
-                    <label className="section-label text-dark/60">
-                      Message
-                    </label>
+                    <label className="section-label text-dark/60">Message</label>
                     <textarea
                       rows={6}
                       placeholder="Share support details, ask for files, or suggest next steps."
                       className="form-input resize-none"
+                      value={messageText}
+                      onChange={(event) => setMessageText(event.target.value)}
                     />
                   </div>
 
                   <button
-                    type="button"
+                    type="submit"
                     className="btn-primary w-full justify-center py-5 text-base mt-4 shadow-lg shadow-primary/20"
                   >
                     <Send size={18} />

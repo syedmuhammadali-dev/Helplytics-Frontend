@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChevronDown, Eye, EyeOff } from "lucide-react";
+import { toast } from "react-toastify";
 
 import Header from "../../components/header/header";
 import {
@@ -12,28 +13,31 @@ import {
   type LoginValues,
   type ValidationErrors,
 } from "../../utils/auth-session";
-import { demoUsers, type DemoRole } from "../../utils/mock-community";
+import { type DemoRole } from "../../utils/mock-community";
+import { updateUserById, useCommunityStore } from "../../utils/community-store";
 
 const DEFAULT_PASSWORD = "DemoPass123";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [selectedUserId, setSelectedUserId] = useState(demoUsers[0].id);
+  const { users } = useCommunityStore();
+  const [selectedUserId, setSelectedUserId] = useState(users[0]?.id ?? "");
   const [values, setValues] = useState<LoginValues>({
-    email: demoUsers[0].email,
+    email: users[0]?.email ?? "",
     password: DEFAULT_PASSWORD,
-    role: demoUsers[0].role,
+    role: users[0]?.role ?? "Both",
   });
   const [errors, setErrors] = useState<ValidationErrors<keyof LoginValues>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const selectedUser =
-    demoUsers.find((user) => user.id === selectedUserId) ?? demoUsers[0];
+  const selectedUser = users.find((user) => user.id === selectedUserId) ?? users[0];
 
   const handleUserChange = (userId: string) => {
-    const nextUser =
-      demoUsers.find((user) => user.id === userId) ?? demoUsers[0];
+    const nextUser = users.find((user) => user.id === userId) ?? users[0];
+    if (!nextUser) {
+      return;
+    }
 
     setSelectedUserId(userId);
     setValues((currentValues) => ({
@@ -59,17 +63,29 @@ export default function LoginPage() {
     setErrors(nextErrors);
 
     if (Object.keys(nextErrors).length > 0) {
+      toast.error("Please fix the highlighted login fields.");
       return;
     }
 
     setIsLoading(true);
 
     window.setTimeout(() => {
+      if (!selectedUser) {
+        setIsLoading(false);
+        toast.error("No account is available to log in.");
+        return;
+      }
+
+      updateUserById(selectedUser.id, {
+        email: values.email.trim(),
+        role: values.role,
+      });
       startDemoSession({
         name: selectedUser.name,
         email: values.email.trim(),
         role: values.role,
       });
+      toast.success("Welcome back. Redirecting to your dashboard.");
       router.push("/dashboard");
       router.refresh();
     }, 600);
@@ -115,11 +131,11 @@ export default function LoginPage() {
                 <div className="relative">
                   <select
                     id="demo-user"
-                    value={selectedUserId}
+                    value={selectedUser?.id ?? ""}
                     onChange={(event) => handleUserChange(event.target.value)}
                     className="form-select"
                   >
-                    {demoUsers.map((user) => (
+                    {users.map((user) => (
                       <option key={user.id} value={user.id}>
                         {user.name}
                       </option>
